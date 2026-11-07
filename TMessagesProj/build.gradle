@@ -131,7 +131,9 @@ android {
 
 
     defaultConfig {
-        minSdkVersion 21
+        // CI run 7 (42344591614): CameraX 1.6.2 (camera-camera2-pipe) requires
+        // minSdk 23; manifest merger failed with minSdk 21.
+        minSdkVersion 23
         targetSdkVersion 35
 
         // GhostGram C2 (PLAN.md 12.1): BuildConfig fields that the ported

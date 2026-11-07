@@ -1,0 +1,319 @@
+/**
+ * This is the source code of Cherrygram for Android.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
+ * Please, be respectful and credit the original author if you use this code.
+ *
+ * Copyright github.com/arsLan4k1390, 2022-2026.
+ *
+ * GhostGram appearance batch (PLAN.md 22.1): full-page port of the donor
+ * appearance preferences. Adaptations for this Mango base, following the
+ * precedents of the earlier batches:
+ * - Analytics screen tracking removed (red line, PLAN 8.1).
+ * - DeeplinkHelper constants literalised ("appearance" / "folders" / "tabs" /
+ *   "messages_profiles"), same approach as the C2-C4 entries.
+ * - TelegramSettingsHelper is a local implementation (donor file not ported
+ *   whole; only getProfileButtonColor is needed here).
+ * - The messages-and-profiles row routes to the already-ported Messages page:
+ *   the donor's dedicated MessagesAndProfilesPreferencesEntry (1619 lines)
+ *   depends on the unpublished Extra.kt and is not ported.
+ * - The icon-based splash row keeps its persisted switch, but the donor's
+ *   LauncherIconController.applySplashTheme() call is dropped: that is a
+ *   TG13-generation API that does not exist in this base.
+ */
+
+package uz.unnarsx.cherrygram.preferences;
+
+import static org.telegram.messenger.LocaleController.getString;
+
+import static uz.unnarsx.cherrygram.preferences.helpers.SettingsHelper.applyNewSpan;
+
+import android.os.Build;
+import android.view.View;
+
+import org.telegram.messenger.NotificationCenter;
+import org.telegram.messenger.R;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.IconBackgroundColors;
+import org.telegram.ui.Components.UItem;
+import org.telegram.ui.Components.UniversalAdapter;
+import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.SettingsActivity;
+
+import java.util.ArrayList;
+import java.util.Set;
+
+import kotlin.Pair;
+import uz.unnarsx.cherrygram.core.configs.CherrygramAppearanceConfig;
+import uz.unnarsx.cherrygram.core.configs.CherrygramChatsConfig;
+import uz.unnarsx.cherrygram.helpers.ui.PopupHelper;
+import uz.unnarsx.cherrygram.preferences.cells.ChatHeaderPreviewView;
+import uz.unnarsx.cherrygram.preferences.cells.ChatInputPreviewView;
+import uz.unnarsx.cherrygram.preferences.helpers.SettingsHelper;
+import uz.unnarsx.cherrygram.preferences.helpers.TelegramSettingsHelper;
+
+public class AppearancePreferencesEntry extends BaseCGPreferencesEntry {
+
+    private final int centerTitleRow = 1;
+    private final int hideSearchBar = 2;
+    private final int snowflakesRow = 3;
+
+    private final int iconPackRow = 4;
+    private final int oneUISwitchesRow = 5;
+    private final int disableDividersRow = 6;
+    private final int iconBasedSplashRow = 7;
+
+    private final int foldersRow = 8;
+    private final int bottomTabsRow = 9;
+    private final int messagesAndProfilesRow = 10;
+
+    private final int glareEffectsSectionRow = 11;
+    private final int glareEffectsStyleRow = 12;
+    private boolean expandedGlareEffectsSectionRow = false;
+
+    private static final Set<String> GLARE_EFFECTS_SECTION_SLUG = Set.of(
+            "glareEffectsType"
+    );
+
+    @Override
+    protected CharSequence getTitle() {
+        return getString(R.string.AP_Header_Appearance);
+    }
+
+    @Override
+    protected String getKey() {
+        return "appearance"; // GhostGram: literal key, deeplink repo not ported (PLAN.md 12.0 precedent)
+    }
+
+    @Override
+    protected void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
+        items.add(UItem.asHeader(getString(R.string.AP_Header)));
+        items.add(SettingsHelper.asSwitchCG(centerTitleRow, getString(R.string.AP_CenterTitle))
+                .setChecked(CherrygramAppearanceConfig.INSTANCE.getCenterTitle())
+                .slug("centerTitle")
+        );
+        items.add(SettingsHelper.asSwitchCG(hideSearchBar, getString(R.string.AP_HideSearchBar))
+                .setChecked(CherrygramAppearanceConfig.INSTANCE.getHideSearchFiled())
+                .slug("hideSearchBar")
+        );
+        items.add(SettingsHelper.asSwitchCG(snowflakesRow, getString(R.string.CP_Snowflakes_Header))
+                .setChecked(CherrygramAppearanceConfig.INSTANCE.getDrawSnowInActionBar())
+                .slug("snowflakes")
+        );
+        items.add(UItem.asShadow(null));
+
+        items.add(UItem.asHeader(getString(R.string.AP_Header_Appearance)));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            items.add(SettingsHelper.asSwitchCG(
+                    iconBasedSplashRow,
+                            applyNewSpan(getString(R.string.AP_IconBasedSplash)),
+                            getString(R.string.AP_IconBasedSplash_Desc)
+                    )
+                    .setChecked(CherrygramAppearanceConfig.INSTANCE.getIconBasedSplash())
+                    .slug("iconBasedSplash")
+            );
+        }
+        items.add(UItem.asButton(iconPackRow, getString(R.string.AP_IconReplacements), getIconPackValueText()));
+        items.add(SettingsHelper.asSwitchCG(oneUISwitchesRow, getString(R.string.AP_OneUI_Switch_Style))
+                .setChecked(CherrygramAppearanceConfig.INSTANCE.getOneUI_SwitchStyle())
+                .slug("oneUI_Switches")
+        );
+        items.add(SettingsHelper.asSwitchCG(disableDividersRow, getString(R.string.AP_DisableDividers))
+                .setChecked(CherrygramAppearanceConfig.INSTANCE.getDisableDividers())
+                .slug("dividers")
+        );
+        items.add(UItem.asShadow(null));
+
+        items.add(
+                SettingsHelper.asExpandableSwitch(
+                        glareEffectsSectionRow,
+                        R.drawable.msg_photo_settings_solar,
+                        applyNewSpan(getString(R.string.CP_StrokeOnViews)),
+                        " "
+                )
+                .setCollapsed(!expandedGlareEffectsSectionRow)
+                .setClickCallback(v -> {
+                    expandedGlareEffectsSectionRow = !expandedGlareEffectsSectionRow;
+                    updateRows(true);
+                })
+                .hideCheckbox(true)
+                .slug("glareEffects")
+        );
+        if (expandedGlareEffectsSectionRow) {
+            items.add(UItem.asButton(glareEffectsStyleRow, getString(R.string.AP_StrokeOnViews_Type), getGlareEffectsValueText())
+                    .slug("glareEffectsType")
+            );
+            items.add(UItem.asShadow(null));
+
+            ChatHeaderPreviewView headerPreviewView = new ChatHeaderPreviewView(getContext(), this, getResourceProvider());
+            headerPreviewView.setTitleCentered(CherrygramChatsConfig.INSTANCE.getCenterChatTitle());
+            headerPreviewView.updateIOSUnreadBadge();
+            items.add(SettingsHelper.asCustomWithBackground(headerPreviewView, 62));
+            items.add(UItem.asShadow(null));
+
+            ChatInputPreviewView inputPreviewView = new ChatInputPreviewView(getContext(), this, getResourceProvider());
+            items.add(SettingsHelper.asCustomWithBackground(inputPreviewView, 62));
+            items.add(UItem.asShadow(null));
+        } else {
+            items.add(UItem.asShadow(null));
+        }
+
+        items.add(UItem.asHeader(getString(R.string.LocalMiscellaneousCache)));
+        items.add(
+                SettingsActivity.SettingCell.Factory.of(
+                        foldersRow,
+                        IconBackgroundColors.BLUE_ALT.top, IconBackgroundColors.BLUE_ALT.bottom,
+                        R.drawable.settings_folders_filled_solar,
+                        getString(R.string.CP_Filters_Header),
+                        getString(R.string.CGP_Folders_Desc),
+                        true
+                )
+                .slug("folders") // GhostGram: literal slug (donor: DeepLinksRepo.CG_Folders)
+        );
+        items.add(
+                SettingsActivity.SettingCell.Factory.of(
+                        bottomTabsRow,
+                        IconBackgroundColors.ORANGE_DEEP.top, IconBackgroundColors.ORANGE_DEEP.bottom,
+                        R.drawable.settings_reorder_filled_solar,
+                        getString(R.string.CP_MainTabs_Header),
+                        getString(R.string.CGP_BottomTabs_Desc),
+                        true
+                )
+                .slug("tabs") // GhostGram: literal slug (donor: DeepLinksRepo.CG_Tabs)
+        );
+        Pair<Integer, Integer> colors = TelegramSettingsHelper.Helper.INSTANCE.getProfileButtonColor(getUserConfig().getCurrentUser(), true);
+        items.add(
+                SettingsActivity.SettingCell.Factory.of(
+                        messagesAndProfilesRow,
+                        Theme.isCurrentThemeDay() ? colors.getSecond() : colors.getFirst(),
+                        Theme.isCurrentThemeDay() ? colors.getFirst() : colors.getSecond(),
+                        R.drawable.settings_customize_filled_solar,
+                        getString(R.string.CP_ProfileReplyBackground),
+                        getString(R.string.CGP_MessagesProfiles_Desc),
+                        true
+                )
+                .slug("messages_profiles") // GhostGram: literal slug (donor: DeepLinksRepo.CG_Messages_And_Profiles)
+        );
+        items.add(UItem.asShadow(null));
+    }
+
+    @Override
+    protected void onClick(UItem item, View view, int position, float x, float y) {
+        if (item.id == glareEffectsSectionRow) {
+            expandedGlareEffectsSectionRow = !expandedGlareEffectsSectionRow;
+            item.collapsed = !item.collapsed;
+
+            updateRows(true);
+        } else if (item.id == glareEffectsStyleRow) {
+            ArrayList<String> configStringKeys = new ArrayList<>();
+            ArrayList<Integer> configValues = new ArrayList<>();
+
+            configStringKeys.add(getString(R.string.Disable));
+            configValues.add(CherrygramAppearanceConfig.GLARE_EFFECTS_DISABLE);
+
+            configStringKeys.add(getString(R.string.Default));
+            configValues.add(CherrygramAppearanceConfig.GLARE_EFFECTS_DEFAULT);
+
+            configStringKeys.add(getString(R.string.AP_StrokeOnViews_Stroke));
+            configValues.add(CherrygramAppearanceConfig.GLARE_EFFECTS_STROKE);
+
+            PopupHelper.show(configStringKeys, getString(R.string.CP_StrokeOnViews), configValues.indexOf(CherrygramAppearanceConfig.INSTANCE.getGlareEffectsType()), getContext(), i -> {
+                CherrygramAppearanceConfig.INSTANCE.setGlareEffectsType(configValues.get(i));
+                SettingsHelper.updateButtonValue(view, getGlareEffectsValueText());
+
+                updateRows(true);
+            });
+        } else if (item.id == centerTitleRow) {
+            CherrygramAppearanceConfig.INSTANCE.setCenterTitle(!CherrygramAppearanceConfig.INSTANCE.getCenterTitle());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getCenterTitle());
+
+            getParentLayout().rebuildAllFragmentViews(true, true);
+        } else  if (item.id == hideSearchBar) {
+            CherrygramAppearanceConfig.INSTANCE.setHideSearchFiled(!CherrygramAppearanceConfig.INSTANCE.getHideSearchFiled());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getHideSearchFiled());
+
+            getNotificationCenter().postNotificationName(NotificationCenter.cgUpdateSearchFiledVisibility);
+        } else if (item.id == snowflakesRow) {
+            CherrygramAppearanceConfig.INSTANCE.setDrawSnowInActionBar(!CherrygramAppearanceConfig.INSTANCE.getDrawSnowInActionBar());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getDrawSnowInActionBar());
+
+            showRestartBulletin();
+        } else if (item.id == iconBasedSplashRow) {
+            CherrygramAppearanceConfig.INSTANCE.setIconBasedSplash(!CherrygramAppearanceConfig.INSTANCE.getIconBasedSplash());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getIconBasedSplash());
+
+            // GhostGram: the donor applies the splash theme here via the TG13
+            // LauncherIconController.applySplashTheme(), which does not exist in
+            // this base; the preference itself is persisted as in the donor.
+        } else if (item.id == iconPackRow) {
+            ArrayList<String> configStringKeys = new ArrayList<>();
+            ArrayList<Integer> configValues = new ArrayList<>();
+
+            configStringKeys.add(getString(R.string.Default));
+            configValues.add(CherrygramAppearanceConfig.ICON_REPLACE_NONE);
+
+            configStringKeys.add(getString(R.string.AP_IconReplacement_Solar));
+            configValues.add(CherrygramAppearanceConfig.ICON_REPLACE_SOLAR);
+
+            PopupHelper.show(configStringKeys, getString(R.string.AP_IconReplacements), configValues.indexOf(CherrygramAppearanceConfig.INSTANCE.getIconReplacement()), getContext(), i -> {
+                CherrygramAppearanceConfig.INSTANCE.setIconReplacement(configValues.get(i));
+                SettingsHelper.updateButtonValue(view, getIconPackValueText());
+
+                if (getParentActivity() instanceof LaunchActivity) {
+                    ((LaunchActivity) getParentActivity()).reloadResources();
+                }
+                Theme.reloadAllResources(getContext() != null ? getContext() : org.telegram.messenger.ApplicationLoader.applicationContext);
+
+                getParentLayout().rebuildAllFragmentViews(false, false);
+            });
+        } else if (item.id == oneUISwitchesRow) {
+            CherrygramAppearanceConfig.INSTANCE.setOneUI_SwitchStyle(!CherrygramAppearanceConfig.INSTANCE.getOneUI_SwitchStyle());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getOneUI_SwitchStyle());
+
+            updateRows(true);
+        } else if (item.id == disableDividersRow) {
+            CherrygramAppearanceConfig.INSTANCE.setDisableDividers(!CherrygramAppearanceConfig.INSTANCE.getDisableDividers());
+            SettingsHelper.updateCheckState(view, CherrygramAppearanceConfig.INSTANCE.getDisableDividers());
+
+            Theme.applyCommonTheme();
+            updateRows(true);
+        } else if (item.id == foldersRow) {
+            CherrygramPreferencesNavigator.INSTANCE.createFolders(this);
+        } else if (item.id == bottomTabsRow) {
+            CherrygramPreferencesNavigator.INSTANCE.createMainTabs(this);
+        } else if (item.id == messagesAndProfilesRow) {
+            // GhostGram: routes to the ported Messages page; the donor's dedicated
+            // messages-and-profiles hub depends on the unpublished Extra.kt.
+            CherrygramPreferencesNavigator.INSTANCE.createMessages(this);
+        }
+    }
+
+    @Override
+    public void scrollToRow(String slug, Runnable unknown) {
+        boolean needsExpand = false;
+        if (GLARE_EFFECTS_SECTION_SLUG.contains(slug) && !expandedGlareEffectsSectionRow) {
+            expandedGlareEffectsSectionRow = true;
+            needsExpand = true;
+        }
+        if (needsExpand) {
+            updateRows(true);
+        }
+        super.scrollToRow(slug, unknown);
+    }
+
+    private String getIconPackValueText()  {
+        return switch (CherrygramAppearanceConfig.INSTANCE.getIconReplacement()) {
+            case CherrygramAppearanceConfig.ICON_REPLACE_SOLAR -> getString(R.string.AP_IconReplacement_Solar);
+            default -> getString(R.string.Default);
+        };
+    }
+
+    private String getGlareEffectsValueText()  {
+        return switch (CherrygramAppearanceConfig.INSTANCE.getGlareEffectsType()) {
+            case CherrygramAppearanceConfig.GLARE_EFFECTS_DISABLE -> getString(R.string.Disable);
+            case CherrygramAppearanceConfig.GLARE_EFFECTS_STROKE -> getString(R.string.AP_StrokeOnViews_Stroke);
+            default -> getString(R.string.Default);
+        };
+    }
+
+}

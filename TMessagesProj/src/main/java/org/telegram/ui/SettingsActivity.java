@@ -39,6 +39,7 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Layout;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -118,6 +119,8 @@ import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.TextHelper;
 import org.telegram.ui.Components.UItem;
+
+import uz.unnarsx.cherrygram.helpers.ui.MonetHelper;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
@@ -1281,6 +1284,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         private boolean twoLines;
+        private boolean cgSettings;
+        private boolean hasBackground;
 
         public void set(
             int iconColorTop, int iconColorBottom, int icon,
@@ -1288,17 +1293,67 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             CharSequence subtitle,
             CharSequence value
         ) {
+            set(iconColorTop, iconColorBottom, icon, title, subtitle, value, false, true);
+        }
+
+        // GhostGram appearance batch (PLAN.md 22.2c): donor overload - the
+        // FLAG_CG_SETTINGS / FLAG_NO_MONET bits stored by Factory.of() are now
+        // actually consumed (bindView passes them through), where previously
+        // CG rows rendered at the standard fixed height.
+        public void set(
+            int iconColorTop, int iconColorBottom, int icon,
+            CharSequence title,
+            CharSequence subtitle,
+            CharSequence value,
+            boolean cgSettings,
+            boolean allowMonet
+        ) {
+            applyCgSettings(cgSettings);
+
+            // Donor logic: a background exists only if the source colors are
+            // not (0, 0) - computed BEFORE any Monet conversion; Monet applies
+            // only to icons with a background.
+            hasBackground = iconColorTop != 0 || iconColorBottom != 0;
+            final boolean monet = allowMonet && hasBackground;
+
+            if (monet) {
+                iconColorTop = MonetHelper.getSettingsIconBackgroundColor(iconColorTop);
+                iconColorBottom = MonetHelper.getSettingsIconBackgroundColor(iconColorBottom);
+            }
+
             iconView.setVisibility(icon != 0 ? View.VISIBLE : View.GONE);
             titleView.setTranslationX(icon == 0 ? dp(2) : 0);
             subtitleView.setTranslationX(icon == 0 ? dp(2) : 0);
 
             iconBackground.setColor(iconColorTop, iconColorBottom);
             iconView.setImageResource(icon);
+            if (monet) {
+                iconView.setColorFilter(new PorterDuffColorFilter(MonetHelper.getSettingsIconForegroundColor(Color.WHITE), PorterDuff.Mode.SRC_IN));
+            } else {
+                iconView.clearColorFilter();
+            }
             titleView.setText(title);
             subtitleView.setVisibility((twoLines = !TextUtils.isEmpty(subtitle)) ? View.VISIBLE : View.GONE);
             subtitleView.setText(subtitle);
             valueView.setVisibility(!TextUtils.isEmpty(value) ? View.VISIBLE : View.GONE);
             valueView.setText(value);
+        }
+
+        private void applyCgSettings(boolean cg) {
+            if (cgSettings == cg) return;
+            cgSettings = cg;
+            if (cg) {
+                subtitleView.setMaxLines(5);
+                subtitleView.setEllipsize(TextUtils.TruncateAt.END);
+                subtitleView.setLineSpacing(dp(2), 0.92f);
+            } else {
+                subtitleView.setMaxLines(Integer.MAX_VALUE);
+                subtitleView.setEllipsize(null);
+                subtitleView.setLineSpacing(0, 1f);
+            }
+            ((LinearLayout.LayoutParams) subtitleView.getLayoutParams()).topMargin = dp(cg ? 1 : 4);
+            subtitleView.requestLayout();
+            requestLayout();
         }
 
         public void setValueCG(CharSequence value) {
@@ -1308,10 +1363,47 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(
-                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(dp(twoLines ? 60 : 50), MeasureSpec.EXACTLY)
-            );
+            if (cgSettings) {
+                // GhostGram (PLAN.md 22.2c): donor CG height - measured from the
+                // content with a floor by subtitle line count (65/60/50dp)
+                super.onMeasure(
+                    MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+                );
+
+                int lines = 0;
+                if (subtitleView.getVisibility() == View.VISIBLE) {
+                    Layout layout = subtitleView.getLayout();
+                    if (layout != null) {
+                        lines = layout.getLineCount();
+                    } else {
+                        subtitleView.measure(
+                                MeasureSpec.makeMeasureSpec(getMeasuredWidth(), MeasureSpec.AT_MOST),
+                                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+                        );
+                        lines = subtitleView.getLineCount();
+                    }
+                }
+
+                int minHeight;
+                if (lines >= 2) {
+                    minHeight = dp(65);
+                } else if (lines == 1) {
+                    minHeight = dp(60);
+                } else {
+                    minHeight = dp(50);
+                }
+
+                setMeasuredDimension(
+                        getMeasuredWidth(),
+                        Math.max(minHeight, getMeasuredHeight())
+                );
+            } else {
+                super.onMeasure(
+                    MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(dp(twoLines ? 60 : 50), MeasureSpec.EXACTLY)
+                );
+            }
         }
 
         public static class Background extends Drawable {
@@ -1376,11 +1468,15 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                 int iconColorTop    = (int) item.longValue;
                 int iconColorBottom = (int) (item.longValue >>> 32);
+                final int flags = item.intValue;
+
                 ((SettingCell) view).set(
                     iconColorTop, iconColorBottom, item.iconResId,
                     item.text,
                     item.subtext,
-                    item.textValue
+                    item.textValue,
+                    (flags & FLAG_CG_SETTINGS) != 0,
+                    (flags & FLAG_NO_MONET) == 0
                 );
             }
 

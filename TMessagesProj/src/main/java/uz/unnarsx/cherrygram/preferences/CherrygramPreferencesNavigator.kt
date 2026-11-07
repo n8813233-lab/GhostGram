@@ -53,4 +53,8 @@ object CherrygramPreferencesNavigator {
     fun createCamera(fragment: BaseFragment): BaseFragment =
         CameraPreferencesEntry().also(fragment::presentFragment)
 
+    // GhostGram appearance batch (PLAN.md 22.1): Cherrygram appearance preferences
+    fun createAppearance(fragment: BaseFragment): BaseFragment =
+        AppearancePreferencesEntry().also(fragment::presentFragment)
+
 }

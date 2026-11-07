@@ -152,6 +152,7 @@ public class ExtensionFeaturesActivity extends BaseFragment {
     // GhostGram C5 (PLAN.md 15.4): Cherry icon-pack switch entry
     private static final int ITEM_CG_ICON_PACK = 106;
     private static final int ITEM_CG_CAMERA = 107;
+    private static final int ITEM_CG_APPEARANCE = 108;
     private static final int ITEM_COMMON_CLEAR_CACHE = 20001, ITEM_COMMON_PROXY = 20002,
             ITEM_COMMON_ACCOUNT = 20003, ITEM_COMMON_PRIVACY = 20004;
 
@@ -335,7 +336,7 @@ public class ExtensionFeaturesActivity extends BaseFragment {
                 return MangoFeatureRegistry.APPEARANCE;
             case 19: case 54: case 55: case 57: case ITEM_HISTORY: case ITEM_RESET_ALL: case ITEM_PERFORMANCE_MONITOR: case ITEM_SYNC_SWITCHES:
             case ITEM_CG_CREATE_QR: case ITEM_CG_BACKUP_EXPORT: case ITEM_CG_BACKUP_IMPORT: case ITEM_CG_BACKUP_RESET:
-            case ITEM_CG_MESSAGE_FILTERS: case ITEM_CG_GEMINI: case ITEM_CG_PRIVACY: case ITEM_CG_CHATS: case ITEM_CG_MAIN_TABS: case ITEM_CG_FOLDERS: case ITEM_CG_ICON_PACK: case ITEM_CG_CAMERA:
+            case ITEM_CG_MESSAGE_FILTERS: case ITEM_CG_GEMINI: case ITEM_CG_PRIVACY: case ITEM_CG_CHATS: case ITEM_CG_MAIN_TABS: case ITEM_CG_FOLDERS: case ITEM_CG_ICON_PACK: case ITEM_CG_CAMERA: case ITEM_CG_APPEARANCE:
                 return MangoFeatureRegistry.TOOLS;
             default: return MangoFeatureRegistry.CHAT;
         }
@@ -492,6 +493,7 @@ public class ExtensionFeaturesActivity extends BaseFragment {
         items.add(UItem.asButton(ITEM_CG_FOLDERS, R.drawable.settings_folders, getString(R.string.CP_Filters_Header)));
         items.add(UItem.asButton(ITEM_CG_ICON_PACK, R.drawable.msg_customize, getString(R.string.AP_IconReplacements), getIconPackValueText()));
         items.add(UItem.asButton(ITEM_CG_CAMERA, R.drawable.camera, getString(R.string.CP_Category_Camera), CameraPreferencesEntry.getCameraName()));
+        items.add(UItem.asButton(ITEM_CG_APPEARANCE, R.drawable.msg_customize, getString(R.string.AP_Header_Appearance)));
         items.add(UItem.asShadow(null));
 
         items.add(UItem.asSwitch(ITEM_ID_SAVE_RECALLED, getString(R.string.V4RecalledSave))
@@ -795,6 +797,10 @@ public class ExtensionFeaturesActivity extends BaseFragment {
             case ITEM_CG_CAMERA:
                 // GhostGram C6 (PLAN.md 16.3): Cherry camera preferences
                 CherrygramPreferencesNavigator.INSTANCE.createCamera(this);
+                return;
+            case ITEM_CG_APPEARANCE:
+                // GhostGram appearance batch (PLAN.md 22.1): Cherry appearance preferences (full page)
+                CherrygramPreferencesNavigator.INSTANCE.createAppearance(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_ID_SAVE_RECALLED:
                 enabled = !org.telegram.messenger.RecalledMessagesStore.isEnabled(currentAccount);

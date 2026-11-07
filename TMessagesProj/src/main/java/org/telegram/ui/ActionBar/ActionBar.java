@@ -61,6 +61,7 @@ import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
+import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider;
 import uz.unnarsx.cherrygram.core.configs.CherrygramChatsConfig;
 import org.telegram.ui.Components.CubicBezierInterpolator;
@@ -2174,13 +2175,24 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         }
     }
 
-    // GhostGram: Cherrygram ActionBar additions. The full glass / iOS-unread-badge
-    // systems (glass drawables, CounterView back pill) are newer-base features not
-    // ported to this Mango base: setupGlass / updateBackPillWidth are inert hooks
-    // so the settings preview compiles; the badge count is stored but not drawn.
+    // GhostGram: Cherrygram ActionBar additions.
+    // Appearance batch (PLAN.md 22.2b): the glass title pill and the iOS unread
+    // badge are now actually drawn. The donor's full implementation is woven
+    // into the TG13 ActionBar (separate back/menu glass drawables, CounterView
+    // back-pill geometry, pill animators) and cannot be lifted wholesale into
+    // this base; what is implemented here is the visible core the settings
+    // previews exercise: setupGlass() creates the blurred-background drawable
+    // exactly like the donor (factory.create + color provider + radius +
+    // padding) and dispatchDraw() paints it as the pill behind the header
+    // content, and UnreadImageView paints the count pill itself (the donor
+    // hosts a CounterView child instead). Only the preview cells call
+    // setupGlass() in this tree, so real screens are unaffected.
+    // updateBackPillWidth() stays a no-op: this base has no back-pill layout.
     private ChatAvatarContainer chatAvatarContainer2;
     private boolean forceAdaptiveWidth;
     private boolean isIOSUnreadBadgeAvailable;
+    private BlurredBackgroundDrawable glassDrawable;
+    private boolean glassMode;
 
     public void setChatAvatarContainer2(ChatAvatarContainer chatAvatarContainer) {
         this.chatAvatarContainer2 = chatAvatarContainer;
@@ -2195,12 +2207,33 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
     }
 
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider, boolean isForum) {
-        // No-op: glass rendering system not ported to this base; the ActionBar keeps
-        // its solid background (set by the caller).
+        setBackground(null);
+        glassMode = true;
+        glassDrawable = factory.create(this)
+                .setColorProvider(colorProvider)
+                .setRadius(dp(23))
+                .setPadding(dp(6));
+        invalidate();
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        if (glassDrawable != null) {
+            final int p = dp(6);
+            final int s = dp(46);
+            final int t = getHeight() - (getCurrentActionBarHeight() + s) / 2 - p;
+            glassDrawable.setBounds(p, t, Math.max(p, getWidth() - p), t + s + p * 2);
+            glassDrawable.draw(canvas);
+        }
+        super.dispatchDraw(canvas);
     }
 
     public void setIOSUnreadBadgeAvailable(boolean available) {
         this.isIOSUnreadBadgeAvailable = available;
+    }
+
+    public boolean iOSUnreadBadgeAvailable() {
+        return isIOSUnreadBadgeAvailable;
     }
 
     public void updateBackPillWidth(boolean animated) {
@@ -2209,6 +2242,8 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
 
     public class UnreadImageView extends ImageView {
         private int unreadCount = -1;
+        private final Paint pillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final TextPaint pillTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
         public UnreadImageView(Context context) {
             super(context);
@@ -2230,6 +2265,29 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             }
             unreadCount = count;
             invalidate();
+        }
+
+        // GhostGram (PLAN.md 22.2b): local badge rendering. The donor draws the
+        // count with a CounterView pill anchored to its TG13 back pill; here the
+        // pill is painted directly, iOS-style, right of the back arrow.
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (unreadCount > 0) {
+                String text = unreadCount > 99 ? "99+" : String.valueOf(unreadCount);
+                pillTextPaint.setTextSize(dp(12));
+                pillTextPaint.setTypeface(AndroidUtilities.bold());
+                float textWidth = pillTextPaint.measureText(text);
+                float pillHeight = dp(18);
+                float pillWidth = Math.max(pillHeight, textWidth + dp(11));
+                float left = dp(33);
+                float top = (getHeight() - pillHeight) / 2f;
+                pillPaint.setColor(getThemedColor(Theme.key_actionBarActionModeDefault));
+                canvas.drawRoundRect(left, top, left + pillWidth, top + pillHeight, pillHeight / 2f, pillHeight / 2f, pillPaint);
+                pillTextPaint.setColor(getThemedColor(Theme.key_actionBarActionModeDefaultIcon));
+                float baseline = top + pillHeight / 2f - (pillTextPaint.descent() + pillTextPaint.ascent()) / 2f;
+                canvas.drawText(text, left + (pillWidth - textWidth) / 2f, baseline, pillTextPaint);
+            }
         }
     }
 

@@ -383,6 +383,7 @@ public class NotificationCenter {
     public static final int callTabsVisibleToggled = totalEvents++;
     public static final int contactsPermissionBadgeCheck = totalEvents++;
     public static final int cgTabsUpdated = totalEvents++; // GhostGram C4: ported from Cherrygram (MainTabs settings page posts it)
+    public static final int cgUpdateSearchFiledVisibility = totalEvents++; // GhostGram appearance batch (PLAN.md 22.1): ported from Cherrygram (appearance page posts it, DialogsActivity observes)
 
     public static boolean alreadyLogged;
 

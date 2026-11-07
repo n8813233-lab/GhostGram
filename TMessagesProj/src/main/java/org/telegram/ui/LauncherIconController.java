@@ -108,7 +108,8 @@ public class LauncherIconController {
     public enum LauncherIcon {
         // Keep the component keys stable so existing installations retain their icon selection.
         DEFAULT("DefaultIcon", R.mipmap.ic_launcher, R.mipmap.ic_launcher_round, R.drawable.mango_icon_galaxy, R.string.MangoAppIconGalaxy),
-        VINTAGE("VintageIcon", R.mipmap.icon_6_launcher, R.mipmap.icon_6_launcher_round, R.drawable.mango_icon_pink, R.string.MangoAppIconPink),
+        // GhostGram appearance batch (PLAN.md 22.4): VINTAGE entry removed - the
+        // launcher set is exactly five GhostGram icons (default + four alternates)
         AQUA("AquaIcon", R.mipmap.icon_4_launcher, R.mipmap.icon_4_launcher_round, R.drawable.mango_icon_gold, R.string.MangoAppIconGold),
         PREMIUM("PremiumIcon", R.mipmap.icon_3_launcher, R.mipmap.icon_3_launcher_round, R.drawable.mango_icon_moon, R.string.MangoAppIconMoon),
         TURBO("TurboIcon", R.mipmap.icon_5_launcher, R.mipmap.icon_5_launcher_round, R.drawable.mango_icon_speed, R.string.MangoAppIconSpeed),

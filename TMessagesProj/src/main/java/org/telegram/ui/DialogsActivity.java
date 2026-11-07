@@ -2879,6 +2879,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             currentConnectionState = getConnectionsManager().getConnectionState();
 
             getNotificationCenter().addObserver(this, NotificationCenter.dialogsNeedReload);
+            getNotificationCenter().addObserver(this, NotificationCenter.cgUpdateSearchFiledVisibility); // GhostGram appearance batch (PLAN.md 22.1)
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.dialogsBackgroundChanged);
             if (!onlySelect) {
@@ -5609,8 +5610,15 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         return pullDownSearchDisabled;
     }
 
+    // GhostGram appearance batch (PLAN.md 22.1): Cherrygram hide-search-field
+    // preference, donor DialogsActivity.shouldHideHomeSearchField() semantics
+    private boolean shouldHideHomeSearchField() {
+        return CherrygramAppearanceConfig.INSTANCE.getHideSearchFiled()
+                && searchString == null;
+    }
+
     private int getPullDownSearchHeight() {
-        return isPullDownSearchDisabled() ? 0 : dp(SEARCH_FIELD_HEIGHT);
+        return isPullDownSearchDisabled() || shouldHideHomeSearchField() ? 0 : dp(SEARCH_FIELD_HEIGHT);
     }
 
     /** Reconcile geometry as well as visibility when extension switches change. */
@@ -10567,6 +10575,21 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
+        if (id == NotificationCenter.cgUpdateSearchFiledVisibility) {
+            // GhostGram appearance batch (PLAN.md 22.1): donor handler - force a
+            // relayout so getPullDownSearchHeight() picks up the preference
+            invalidateScrollY = true;
+            if (viewPages != null) {
+                for (ViewPage page : viewPages) {
+                    if (page != null && page.listView != null) {
+                        page.listView.requestLayout();
+                    }
+                }
+            }
+            if (fragmentView != null) {
+                fragmentView.requestLayout();
+            }
+        }
         if (id == NotificationCenter.dialogsNeedReload) {
             if (viewPages == null || dialogsListFrozen) {
                 return;

@@ -2977,7 +2977,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         ) {
                             CGBiometricPrompt.prompt(bf.getParentActivity(), () -> {
                                 if (bf.presentFragment(new INavigationLayout.NavigationParams(fragment).setNoAnimation(true))) {
-                                    pushOpened = true;
+                                    // GhostGram C3: biometric callback runs async after this method returns, so pushOpened cannot be set from the lambda (local capture must be effectively final).
                                     LaunchActivity.dismissAllWeb();
                                 }
                             });
@@ -3027,7 +3027,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     ) {
                         CGBiometricPrompt.prompt(bf.getParentActivity(), () -> {
                             if (bf.presentFragment(new INavigationLayout.NavigationParams(fragment).setNoAnimation(true))) {
-                                pushOpened = true;
+                                // GhostGram C3: biometric callback runs async after this method returns, so pushOpened cannot be set from the lambda (local capture must be effectively final).
                                 LaunchActivity.dismissAllWeb();
                             }
                         });
@@ -3052,7 +3052,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 ) {
                     CGBiometricPrompt.prompt(bf.getParentActivity(), () -> {
                         if (bf.presentFragment(new INavigationLayout.NavigationParams(fragment).setNoAnimation(true))) {
-                            pushOpened = true;
+                            // GhostGram C3: biometric callback runs async after this method returns, so pushOpened cannot be set from the lambda (local capture must be effectively final).
                             LaunchActivity.dismissAllWeb();
                         }
                     });

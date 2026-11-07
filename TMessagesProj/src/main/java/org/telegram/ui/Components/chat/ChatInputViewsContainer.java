@@ -267,6 +267,21 @@ public class ChatInputViewsContainer extends FrameLayout {
         blurredBackgroundDrawable.setBounds(tmpRect);
         blurredBackgroundDrawable.draw(canvas);
 
+        if (leftBubbleDrawable != null && leftBubbleSet) {
+            int bTop = blurTop + (int) bubbleInputTranlationY + inputBubbleHeightRound - BUBBLE_BUTTON_SIZE;
+            tmpRect2.set(leftBubbleLeft, bTop, leftBubbleRight, bTop + BUBBLE_BUTTON_SIZE);
+            leftBubbleDrawable.setBounds(tmpRect2);
+            leftBubbleDrawable.setAlpha(sideBubblesAlpha);
+            leftBubbleDrawable.draw(canvas);
+        }
+        if (rightBubbleDrawable != null && rightBubbleSet) {
+            int bTop = blurTop + (int) bubbleInputTranlationY + inputBubbleHeightRound - BUBBLE_BUTTON_SIZE;
+            tmpRect2.set(rightBubbleLeft, bTop, rightBubbleRight, bTop + BUBBLE_BUTTON_SIZE);
+            rightBubbleDrawable.setBounds(tmpRect2);
+            rightBubbleDrawable.setAlpha(sideBubblesAlpha);
+            rightBubbleDrawable.draw(canvas);
+        }
+
         if (needDrawInAppKeyboard) {
             underKeyboardBackgroundDrawable.draw(canvas);
         }
@@ -357,4 +372,50 @@ public class ChatInputViewsContainer extends FrameLayout {
 
         return captured;
     }
+
+    /** Cherrygram start */
+    private final Rect tmpRect2 = new Rect();
+
+    public BlurredBackgroundDrawable leftBubbleDrawable;
+    public BlurredBackgroundDrawable rightBubbleDrawable;
+
+    private final int BUBBLE_BUTTON_SIZE = dp(44);
+    private int sideBubblesAlpha = 255;
+
+    public void setLeftBubbleDrawable(BlurredBackgroundDrawable drawable) {
+        leftBubbleDrawable = drawable;
+        leftBubbleDrawable.setRadius(dp(22));
+    }
+
+    public void setRightBubbleDrawable(BlurredBackgroundDrawable drawable) {
+        rightBubbleDrawable = drawable;
+        rightBubbleDrawable.setRadius(dp(22));
+    }
+
+    private int leftBubbleLeft, leftBubbleRight;
+    private int rightBubbleLeft, rightBubbleRight;
+    private boolean leftBubbleSet, rightBubbleSet;
+
+    public void setLeftBubbleBounds(int left, int right) {
+        leftBubbleLeft = left;
+        leftBubbleRight = right;
+        leftBubbleSet = true;
+        invalidate();
+    }
+
+    public void setRightBubbleBounds(int left, int right) {
+        rightBubbleLeft = left;
+        rightBubbleRight = right;
+        rightBubbleSet = true;
+        invalidate();
+    }
+
+    public void setSideBubblesAlpha(int alpha) {
+        if (sideBubblesAlpha != alpha) {
+            sideBubblesAlpha = alpha;
+            invalidate();
+        }
+    }
+    /** Cherrygram finish */
+
 }

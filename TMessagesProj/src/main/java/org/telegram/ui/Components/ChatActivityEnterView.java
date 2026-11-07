@@ -73,7 +73,9 @@ import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MotionEvent;
+import android.view.DisplayCutout;
 import android.view.View;
+import android.view.View.OnLayoutChangeListener;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewPropertyAnimator;
@@ -175,6 +177,7 @@ import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProviderThemed;
+import org.telegram.ui.Components.chat.ChatInputViewsContainer;
 import org.telegram.ui.Components.chat.layouts.ChatActivitySideControlsButtonsLayout;
 import org.telegram.ui.Components.inset.WindowInsetsInAppController;
 import org.telegram.ui.ContentPreviewViewer;
@@ -568,7 +571,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     boolean shiftPressed = false;
 
     @Nullable
-    protected EditTextCaption messageEditText;
+    public EditTextCaption messageEditText;
     private SlowModeBtn slowModeButton;
     private int slowModeTimer;
     private Runnable updateSlowModeRunnable;
@@ -2533,6 +2536,14 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat) {
         this(context, parent, fragment, isChat, null);
+    }
+
+    // GhostGram: donor 6-arg ctor (forcePreview = iOS input field in preview).
+    // forcePreview is only read by iOSMessageInputFieldAvailable() below; the base
+    // ctor body does not consult it, so it is stored after delegation.
+    public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat, Theme.ResourcesProvider resourcesProvider, boolean forcePreview) {
+        this(context, parent, fragment, isChat, resourcesProvider);
+        this.forcePreview = forcePreview;
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -14721,4 +14732,308 @@ public class ChatActivityEnterView extends FrameLayout implements
         updateFieldRight(lastAttachVisible);
         checkSendButton(false);
     }
+
+    /** Cherrygram start */
+    private FrameLayout attachBubble;
+    private ChatInputViewsContainer chatInputViewsContainer;
+
+    private float bubblesProgress = 1f;
+
+    private boolean sendTextButtonActive;
+    private boolean bubbleWidthAnimationRunning;
+
+    private boolean forcePreview; // GhostGram: non-final (assigned after delegation in 6-arg ctor)
+    private boolean waitingBubblesLayout;
+    private int storiesSendBubbleWidth;
+    private boolean attachDisabledBySlowMode;
+
+    public void setChatInputViewsContainer(ChatInputViewsContainer chatInputViewsContainer) {
+        this.chatInputViewsContainer = chatInputViewsContainer;
+    }
+
+    public boolean iOSMessageInputFieldAvailable() {
+        if (forcePreview) return true;
+
+        if (!CherrygramChatsConfig.INSTANCE.getIOSMessageInputField()) {
+            return false;
+        }
+
+        if (isStories) {
+            return true;
+        }
+
+        if (parentFragment == null || parentFragment.isInPreviewMode()) {
+            return false;
+        }
+
+        TLRPC.Chat currentChat = parentFragment.getCurrentChat();
+        boolean isChatAllowed = false;
+        if (currentChat != null) {
+            boolean isChannel = ChatObject.isChannelCG(currentChat);
+            if (isChannel) {
+                isChatAllowed = ChatObject.hasAdminRights(currentChat);
+            } else {
+                isChatAllowed = true;
+            }
+        }
+
+        TLRPC.User currentUser = parentFragment.getCurrentUser();
+        /*boolean isUserAllowed = false;
+        if (currentUser != null) {
+            boolean isBot = UserObject.isBot(currentUser);
+            if (isBot) {
+                isUserAllowed = parentFragment != null
+                        && parentFragment.bottomOverlayStartButton != null && parentFragment.bottomOverlayStartButton.getText() != getString(R.string.BotStart2);
+            } else {
+                isUserAllowed = true;
+            }
+        }*/
+
+        return isChatAllowed || /*isUserAllowed*/ currentUser != null;
+    }
+
+    public boolean getStoriesBubbles(RectF left, RectF center, RectF right) {
+        if (!isStories || !iOSMessageInputFieldAvailable() || attachBubble == null || sendButtonContainer.getWidth() == 0) {
+            return false;
+        }
+        final float baseX = textFieldContainer.getX();
+        final float baseY = textFieldContainer.getY();
+        final float bottom = baseY + textFieldContainer.getHeight();
+        final float gap = dp(6);
+
+        if (attachBubble.getVisibility() == View.VISIBLE) {
+            left.set(baseX + attachBubble.getX(), bottom - attachBubble.getHeight(), baseX + attachBubble.getX() + attachBubble.getWidth(), bottom);
+        } else {
+            left.setEmpty();
+        }
+
+        final float sendRight = baseX + sendButtonContainer.getX() + sendButtonContainer.getWidth();
+        final int sendWidth = storiesSendBubbleWidth > 0 ? storiesSendBubbleWidth : dp(DEFAULT_HEIGHT);
+        right.set(sendRight - sendWidth, bottom - dp(DEFAULT_HEIGHT), sendRight, bottom);
+
+        center.set(left.isEmpty() ? baseX : left.right + gap, baseY + messageEditTextContainer.getY(), right.left - gap, bottom);
+        return true;
+    }
+
+    public void updateBubblesProgress(float progress) {
+        if (bubblesProgress == progress) return;
+        bubblesProgress = progress;
+        checkBubbles();
+    }
+
+    private int computeEffectiveSendWidth() {
+        int width = dp(DEFAULT_HEIGHT);
+        if (sendTextButtonActive) {
+            width = Math.max(width, sendButton.width() - dp(12));
+        }
+        if (slowModeButton != null && slowModeButton.getVisibility() == View.VISIBLE) {
+            width = Math.max(width, slowModeButton.getMeasuredWidth());
+        }
+        return width;
+    }
+
+    public void checkBubbles() {
+        if (bubbleWidthAnimationRunning) return;
+        if (chatInputViewsContainer == null && !isStories) return;
+
+        /*boolean pausedForTrim = !recordingAudioVideo &&
+                (
+                        recordedAudioPanel != null && recordedAudioPanel.getVisibility() == View.VISIBLE
+                        || audioTimelineView != null && audioTimelineView.getVisibility() == View.VISIBLE
+                        || videoTimelineView != null && videoTimelineView.getVisibility() == View.VISIBLE
+                );
+
+        if (attachButton != null && iOSMessageInputFieldAvailable() && pausedForTrim) {
+            attachButton.setAlpha(0f);
+        }*/
+
+        if (!iOSMessageInputFieldAvailable()) {
+            applyBubblesWhenReady(chatInputViewsContainer, 0f, computeEffectiveSendWidth());
+            return;
+        }
+        /*if (pausedForTrim) {
+            applyBubblesWhenReady(chatInputViewsContainer, 0f, computeEffectiveSendWidth());
+            return;
+        }*/
+        applyBubblesWhenReady(chatInputViewsContainer, bubblesProgress, computeEffectiveSendWidth());
+    }
+
+    public void applyBubblesWhenReady(ChatInputViewsContainer chatInputViewsContainer, float progress, int effectiveSendWidth) {
+        if (attachBubble == null || sendButtonContainer == null || chatInputViewsContainer == null && !isStories) return;
+        if (attachBubble.getWidth() == 0 || sendButtonContainer.getWidth() == 0) {
+            if (!waitingBubblesLayout) {
+                waitingBubblesLayout = true;
+                textFieldContainer.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int l, int t, int r, int b, int ol, int ot, int or, int ob) {
+                        if (attachBubble.getWidth() == 0 || sendButtonContainer.getWidth() == 0) return;
+                        v.removeOnLayoutChangeListener(this);
+                        waitingBubblesLayout = false;
+                        checkBubbles();
+                    }
+                });
+            }
+            return;
+        }
+        if (chatInputViewsContainer == null) {
+            storiesSendBubbleWidth = effectiveSendWidth;
+            checkEmojiButtonParams(effectiveSendWidth);
+            if (getParent() instanceof View) {
+                ((View) getParent()).invalidate();
+            }
+            return;
+        }
+        int fullOffsetLeft = dp(50);
+        int fullOffsetRight = dp(50) + Math.max(0, effectiveSendWidth - dp(DEFAULT_HEIGHT));
+
+        int offsetLeft = Math.round(fullOffsetLeft * progress);
+        int offsetRight = Math.round(fullOffsetRight * progress);
+        chatInputViewsContainer.setInputBubbleOffsets(offsetLeft, offsetRight);
+
+        int leftInset = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsets insets = getRootWindowInsets();
+            if (insets != null) {
+                leftInset = insets.getInsets(WindowInsets.Type.systemBars()).left;
+                DisplayCutout cutout = insets.getDisplayCutout();
+                if (cutout != null) {
+                    leftInset = Math.max(leftInset, cutout.getSafeInsetLeft());
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowInsets insets = getRootWindowInsets();
+            if (insets != null) {
+                DisplayCutout cutout = insets.getDisplayCutout();
+                if (cutout != null) {
+                    leftInset = cutout.getSafeInsetLeft();
+                }
+            }
+        }
+
+        int additionalPadding = dp(7);
+
+        int left = (int) (attachBubble.getLeft() + attachBubble.getTranslationX() - chatInputViewsContainer.getLeft()) + additionalPadding + leftInset;
+        int right = left + attachBubble.getWidth();
+        chatInputViewsContainer.setLeftBubbleBounds(left, right);
+
+        int sContainerLeft = (int) (sendButtonContainer.getLeft() + sendButtonContainer.getTranslationX() - chatInputViewsContainer.getLeft()) + additionalPadding + leftInset;
+        int sContainerRight = sContainerLeft + sendButtonContainer.getWidth();
+        int sLeft = sContainerRight - effectiveSendWidth;
+        chatInputViewsContainer.setRightBubbleBounds(sLeft, sContainerRight);
+        chatInputViewsContainer.setSideBubblesAlpha((int) (255 * progress));
+        updateTopViewRightMargin(Math.round(Math.max(0, effectiveSendWidth - dp(DEFAULT_HEIGHT)) * progress));
+        checkEmojiButtonParams(effectiveSendWidth);
+    }
+
+    private void checkEmojiButtonParams(int effectiveSendWidth) {
+        if (messageEditText == null) return;
+        if (iOSMessageInputFieldAvailable() && emojiButton != null) {
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) messageEditText.getLayoutParams();
+            FrameLayout.LayoutParams emojiParams = (FrameLayout.LayoutParams) emojiButton.getLayoutParams();
+
+            if (emojiParams != null && (emojiParams.gravity & Gravity.RIGHT) == Gravity.RIGHT) {
+                int extra = Math.max(0, effectiveSendWidth - dp(DEFAULT_HEIGHT));
+
+                int baseEmojiRightMargin = dp(3);
+                if (emojiParams.rightMargin != baseEmojiRightMargin) {
+                    emojiParams.rightMargin = baseEmojiRightMargin;
+                    emojiButton.setLayoutParams(emojiParams);
+                }
+
+                emojiButton.setTranslationX(-extra);
+
+                int targetEditTextMargin = dp(DEFAULT_HEIGHT + 5) + extra + (botButtonDrawable != null ? dp(20) : 0);
+                if (layoutParams.rightMargin != targetEditTextMargin) {
+                    layoutParams.rightMargin = targetEditTextMargin;
+                    messageEditText.setLayoutParams(layoutParams);
+                }
+            }
+        }
+    }
+
+    private void updateTopViewRightMargin(int extra) {
+        if (topView == null || !(topView.getLayoutParams() instanceof FrameLayout.LayoutParams)) return;
+        final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) topView.getLayoutParams();
+        final int target = iOSMessageInputFieldAvailable() ? Math.max(0, extra) : 0;
+        if (lp.rightMargin != target) {
+            lp.rightMargin = target;
+            topView.setLayoutParams(lp);
+        }
+    }
+
+    public void disableAttachButton(boolean disabled) {
+        if (attachButton == null) return;
+        attachDisabledBySlowMode = disabled;
+        final boolean recordUi = recordInterfaceState != 0 || recordedAudioPanel != null && recordedAudioPanel.getVisibility() == VISIBLE;
+        final float targetAlpha = recordUi ? 0f : disabled ? 0.5f : 1f;
+        attachButton.setEnabled(!disabled);
+        if (attachButtonAlpha == targetAlpha) return;
+        if (attachButtonAnimator != null) {
+            attachButtonAnimator.cancel();
+        }
+        final float targetScale = targetAlpha == 0f ? 0f : 1f;
+        attachButtonAnimator = attachButton.animate()
+                .alpha(attachButtonAlpha = targetAlpha)
+                .scaleX(targetScale)
+                .scaleY(targetScale)
+                .setDuration(250);
+        attachButtonAnimator.start();
+    }
+
+    private void updateScheduledButtonSpacing() {
+        if (scheduledButton == null || !iOSMessageInputFieldAvailable()) return;
+        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) scheduledButton.getLayoutParams();
+        if (lp == null) return;
+        lp.rightMargin = botButtonDrawable == null ? dp(30) : -dp(10);
+        scheduledButton.setLayoutParams(lp);
+    }
+
+    public void updateSendAsButtonPreview() {
+        if (CherrygramChatsConfig.INSTANCE.getHideSendAsChannel()) {
+            return;
+        }
+
+        createMessageEditText();
+        createSenderSelectView();
+
+        TLRPC.User user = UserConfig.getInstance(currentAccount).getCurrentUser();
+
+        if (user == null || senderSelectView == null) {
+            return;
+        }
+
+        senderSelectView.setAvatar(user);
+
+        senderSelectView.setVisibility(VISIBLE);
+        senderSelectView.setAlpha(1f);
+        senderSelectView.setTranslationX(CherrygramChatsConfig.INSTANCE.getIOSMessageInputField() ? 32.66F : 0);
+
+        messageTextTranslationX = 0;
+        updateMessageTextParams();
+
+        senderSelectView.setClickable(false);
+        senderSelectView.setFocusable(false);
+        senderSelectView.setEnabled(false);
+
+        if (senderSelectView.getTag() instanceof ValueAnimator) {
+            ((ValueAnimator) senderSelectView.getTag()).cancel();
+            senderSelectView.setTag(null);
+        }
+
+        requestLayout();
+        invalidate();
+    }
+
+    public void updateAudioVideoButton() {
+        if (audioVideoSendButton != null) {
+            audioVideoSendButton.setColorFilter(new PorterDuffColorFilter(audioVideoButtonContainerForbidden ?
+                    getThemedColor(Theme.key_glass_defaultIcon) : iOSMessageInputFieldAvailable() ? getThemedColor(Theme.key_actionBarActionModeDefaultIcon) : Color.WHITE, PorterDuff.Mode.SRC_IN));
+
+            audioVideoSendButton.reloadState();
+            audioVideoSendButton.invalidate();
+        }
+    }
+
+    /** Cherrygram finish */
+
 }

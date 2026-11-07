@@ -598,7 +598,7 @@ public class ChatActivity extends BaseFragment implements
     private final int searchContainerHeight = 44;
     private FrameLayout searchContainer;
     private ImageView searchCalendarButton;
-    private ImageView searchUserButton;
+    public ImageView searchUserButton;
     /** Cherrygram start */
     public ImageView searchFilterButton;
     /** Cherrygram finish */

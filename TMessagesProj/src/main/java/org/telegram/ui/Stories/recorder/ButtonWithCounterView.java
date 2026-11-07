@@ -667,4 +667,17 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable {
         }
         return super.onInterceptTouchEvent(ev);
     }
+
+    /** Cherrygram start */
+    public boolean useStroke;
+
+    public ButtonWithCounterView setNeutral(boolean md3) {
+        this.neutral = true;
+        setFilled(true);
+        setColor(Theme.getColor(md3 ? Theme.key_windowBackgroundWhite : Theme.key_buttonNeutral, resourcesProvider));
+        updateColors();
+        return this;
+    }
+    /** Cherrygram finish */
+
 }

@@ -70,7 +70,7 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     private CheckBoxSquare checkBoxBig;
     private ImageView checkBox3;
     private TextView adminTextView;
-    private TextView addButton;
+    public TextView addButton;
     private Drawable premiumDrawable;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerification;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatus;
@@ -129,6 +129,13 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     }
 
     private final int padding;
+
+    // GhostGram: donor 8-arg ctor. needMutualIcon/allowLongPress only feed the
+    // donor's story-avatar long-press + premium-status edit-button gating, which
+    // this base does not have; the only call site passes false, false.
+    public UserCell(Context context, int padding, int checkbox, boolean admin, boolean needAddButton, Theme.ResourcesProvider resourcesProvider, boolean needMutualIcon, boolean allowLongPress) {
+        this(context, padding, checkbox, admin, needAddButton, resourcesProvider);
+    }
 
     public UserCell(Context context, int padding, int checkbox, boolean admin, boolean needAddButton, Theme.ResourcesProvider resourcesProvider) {
         super(context);

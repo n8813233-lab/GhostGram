@@ -85,6 +85,17 @@ public class ChatActivityEnterViewAnimatedIconView extends RLottieImageView {
         }
     }
 
+    /** Cherrygram start */
+    public void reloadState() {
+        stateMap.clear();
+        animatingState = null;
+
+        if (currentState != null) {
+            setState(currentState, false);
+        }
+    }
+    /** Cherrygram finish */
+
     public State getCurrentState() {
         return currentState;
     }

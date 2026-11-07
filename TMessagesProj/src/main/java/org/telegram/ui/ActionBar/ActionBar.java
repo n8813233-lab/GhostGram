@@ -59,6 +59,10 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.ui.Adapters.FiltersView;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.ChatAvatarContainer;
+import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
+import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider;
+import uz.unnarsx.cherrygram.core.configs.CherrygramChatsConfig;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EllipsizeSpanAnimator;
 import org.telegram.ui.Components.FireworksEffect;
@@ -85,7 +89,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
     }
 
     private INavigationLayout.BackButtonState backButtonState = INavigationLayout.BackButtonState.BACK;
-    public ImageView backButtonImageView;
+    public UnreadImageView backButtonImageView;
     private BackupImageView avatarSearchImageView;
     private Drawable backButtonDrawable;
     private final SimpleTextView[] titleTextView = new SimpleTextView[2];
@@ -193,7 +197,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         if (backButtonImageView != null) {
             return;
         }
-        backButtonImageView = new ImageView(getContext());
+        backButtonImageView = new UnreadImageView(getContext());
         backButtonImageView.setScaleType(ImageView.ScaleType.CENTER);
         backButtonImageView.setBackgroundDrawable(Theme.createSelectorDrawable(itemsBackgroundColor));
         backButtonImageView.setPadding(dp(1), 0, 0, 0);
@@ -2169,4 +2173,64 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             invalidate();
         }
     }
+
+    // GhostGram: Cherrygram ActionBar additions. The full glass / iOS-unread-badge
+    // systems (glass drawables, CounterView back pill) are newer-base features not
+    // ported to this Mango base: setupGlass / updateBackPillWidth are inert hooks
+    // so the settings preview compiles; the badge count is stored but not drawn.
+    private ChatAvatarContainer chatAvatarContainer2;
+    private boolean forceAdaptiveWidth;
+    private boolean isIOSUnreadBadgeAvailable;
+
+    public void setChatAvatarContainer2(ChatAvatarContainer chatAvatarContainer) {
+        this.chatAvatarContainer2 = chatAvatarContainer;
+    }
+
+    public void setForceAdaptiveWidth(boolean forceAdaptiveWidth) {
+        this.forceAdaptiveWidth = forceAdaptiveWidth;
+    }
+
+    public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider) {
+        setupGlass(factory, colorProvider, false);
+    }
+
+    public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider, boolean isForum) {
+        // No-op: glass rendering system not ported to this base; the ActionBar keeps
+        // its solid background (set by the caller).
+    }
+
+    public void setIOSUnreadBadgeAvailable(boolean available) {
+        this.isIOSUnreadBadgeAvailable = available;
+    }
+
+    public void updateBackPillWidth(boolean animated) {
+        // No-op: back-pill badge system (CounterView pill) not ported to this base.
+    }
+
+    public class UnreadImageView extends ImageView {
+        private int unreadCount = -1;
+
+        public UnreadImageView(Context context) {
+            super(context);
+        }
+
+        public void checkUnreadView(int count) {
+            if (!CherrygramChatsConfig.INSTANCE.getUnreadBadgeOnBackButton() || (parentFragment != null && parentFragment.isInPreviewMode())) return;
+            setUnread(count);
+        }
+
+        public int getUnreadCount() {
+            return unreadCount;
+        }
+
+        public void setUnread(int count) {
+            count = Math.max(0, count);
+            if (count > 999) {
+                count = 999;
+            }
+            unreadCount = count;
+            invalidate();
+        }
+    }
+
 }

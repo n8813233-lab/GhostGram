@@ -1400,6 +1400,29 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 item.longValue = ((long) iconColorBottom << 32) | (iconColorTop & 0xFFFFFFFFL);
                 return item;
             }
+            // GhostGram: donor overloads (Cherrygram SettingCell.Factory) — boolean
+            // cgSettings/allowMonet are carried in item.intValue; SettingCell in this
+            // base does not read the flags yet (no CG/adaptive rendering ported).
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, boolean cgSettings) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, null, cgSettings, true);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, boolean cgSettings, boolean allowMonet) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, null, cgSettings, allowMonet);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, CharSequence value, boolean allowMonet) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, value, false, allowMonet);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, CharSequence value, boolean cgSettings, boolean allowMonet) {
+                final UItem item = UItem.ofFactory(Factory.class);
+                item.id = id;
+                item.iconResId = icon;
+                item.text = title;
+                item.subtext = subtitle;
+                item.textValue = value;
+                item.longValue = ((long) iconColorBottom << 32) | (iconColorTop & 0xFFFFFFFFL);
+                item.intValue = (cgSettings ? FLAG_CG_SETTINGS : 0) | (allowMonet ? 0 : FLAG_NO_MONET);
+                return item;
+            }
 
             public static UItem ofBot(TLRPC.TL_attachMenuBot attachMenuBot, int iconColorTop, int iconColorBottom, int icon) {
                 final UItem item = UItem.ofFactory(Factory.class);
@@ -1411,6 +1434,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 return item;
             }
         }
+
+        /** Cherrygram start */
+        public static final int FLAG_CG_SETTINGS = 1;
+        public static final int FLAG_NO_MONET    = 1 << 1;
+        /** Cherrygram finish */
     }
 
     public static class SuggestionCell extends LinearLayout implements Theme.Colorable {

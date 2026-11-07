@@ -178,18 +178,19 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             return position >= start && position <= end;
         }
     }
+    public int itemsOffset = 0;
     private final ArrayList<Section> whiteSections = new ArrayList<>();
     private final ArrayList<Section> reorderSections = new ArrayList<>();
     private Section currentWhiteSection, currentReorderSection;
     public void whiteSectionStart() {
         currentWhiteSection = new Section();
-        currentWhiteSection.start = items.size();
+        currentWhiteSection.start = itemsOffset + items.size();
         currentWhiteSection.end = -1;
         whiteSections.add(currentWhiteSection);
     }
     public void whiteSectionEnd() {
         if (currentWhiteSection != null) {
-            currentWhiteSection.end = Math.max(0, items.size() - 1);
+            currentWhiteSection.end = Math.max(0, itemsOffset + items.size() - 1);
         }
     }
 

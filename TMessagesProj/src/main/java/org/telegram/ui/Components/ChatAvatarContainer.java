@@ -1650,4 +1650,37 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         }
         invalidate();
     }
+
+    /** Cherrygram start */
+    private ActionBar actionBar;
+
+    public void setActionBar(ActionBar actionBar) {
+        this.actionBar = actionBar;
+    }
+
+    private boolean glassMode;
+    public void setGlassMode() {
+        if (titleTextView != null) {
+            titleTextView.setTextSizePx(dp(17.5f));
+        }
+        if (subtitleTextView != null) {
+            subtitleTextView.setTextSizePx(dp(13.5f));
+        }
+        glassMode = true;
+    }
+
+    private boolean moveText = false;
+
+    public void setMoveText(boolean moveText) {
+        if (this.moveText != moveText) {
+            this.moveText = moveText;
+            requestLayout();
+        }
+    }
+
+    public boolean isCentered() {
+        return false;
+    }
+    /** Cherrygram finish */
+
 }

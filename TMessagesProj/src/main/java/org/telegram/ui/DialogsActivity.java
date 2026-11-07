@@ -8864,7 +8864,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         } else {
             return openChatPreviewCG(args, searchString, chatActivity, previewMenu);
         }
-        return false;
     }
 
     // GhostGram C3 (PLAN.md 13.2): extracted verbatim from showChatPreview so the

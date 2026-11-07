@@ -87,7 +87,9 @@ dependencies {
 
 def isWindows = String.valueOf(DefaultNativePlatform.currentOperatingSystem.toFamilyName() == OperatingSystemFamily.WINDOWS)
 android {
-    compileSdkVersion 35
+    // CI run 6 (42340359674): CameraX 1.6.2 requires compileSdk >= 36 (AAR
+    // metadata check). targetSdk stays 35 — no runtime behavior change.
+    compileSdkVersion 36
     buildToolsVersion '35.0.0'
     ndkVersion "21.4.7075529"
 
@@ -119,6 +121,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
 
         coreLibraryDesugaringEnabled true
+    }
+
+    // CI run 6 (42340359674): compileReleaseKotlin failed — Kotlin jvmTarget
+    // defaulted to the JDK (17) while Java compiles at 1.8. Align to 1.8.
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 
 

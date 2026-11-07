@@ -26,7 +26,7 @@ jobs:
           SDKMANAGER=$(ls /usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
           echo "Using $SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
+          "$SDKMANAGER" "platforms;android-35" "platforms;android-36" "build-tools;35.0.0" "ndk;21.4.7075529" "cmake;3.10.2.4988404"
           echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
 
       - name: Generate CI keystore (throwaway, public CI credentials)

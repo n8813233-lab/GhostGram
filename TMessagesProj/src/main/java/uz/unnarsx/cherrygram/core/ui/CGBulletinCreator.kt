@@ -29,7 +29,6 @@ import org.telegram.ui.Components.BulletinFactory
 import org.telegram.ui.LaunchActivity
 import uz.unnarsx.cherrygram.core.configs.CherrygramExperimentalConfig
 import uz.unnarsx.cherrygram.core.helpers.AppRestartHelper
-import uz.unnarsx.cherrygram.preferences.CherrygramPreferencesNavigator
 
 object CGBulletinCreator {
 
@@ -80,14 +79,13 @@ object CGBulletinCreator {
     }
 
     fun createRequireDonateBulletin(fragment: BaseFragment) {
+        // GhostGram: 捐赠设置页（DonatesPreferencesEntry）按 C2 定盘未移植，
+        // MoreInfo 按钮无处可去，故只保留提示本体、不挂按钮。
         BulletinFactory.of(fragment).createSimpleBulletin(
             R.raw.cg_star_reaction,  // stars_topup // star_premium_2
             getString(R.string.DP_Donate_Exclusive),
-            getString(R.string.DP_Donate_ExclusiveDesc),
-            getString(R.string.MoreInfo)
-        ) {
-            CherrygramPreferencesNavigator.createDonate(fragment, !fragment.connectionsManager.isTestBackend)
-        }.show()
+            getString(R.string.DP_Donate_ExclusiveDesc)
+        ).show()
     }
 
     fun createSwitchAccountBulletin(account: Int) {

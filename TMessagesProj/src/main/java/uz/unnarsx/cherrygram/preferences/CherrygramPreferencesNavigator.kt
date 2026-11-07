@@ -16,6 +16,8 @@
 package uz.unnarsx.cherrygram.preferences
 
 import org.telegram.ui.ActionBar.BaseFragment
+import uz.unnarsx.cherrygram.preferences.folders.FoldersPreferencesEntry
+import uz.unnarsx.cherrygram.preferences.tabs.MainTabsPreferencesEntry
 
 object CherrygramPreferencesNavigator {
 

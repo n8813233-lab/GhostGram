@@ -1711,8 +1711,8 @@ public class ChatActivity extends BaseFragment implements
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
-    private final static int call = 32;
-    private final static int video_call = 33;
+    public final static int call = 32;
+    public final static int video_call = 33;
 
     private final static int attach_photo = 0;
     private final static int attach_gallery = 1;
@@ -10336,7 +10336,7 @@ public class ChatActivity extends BaseFragment implements
         topPanelLayout.setDebugName(bizBotButton, "bot biz");
     }
 
-    private void createUndoView() {
+    public void createUndoView() {
         if (undoView != null || getContext() == null) {
             return;
         }
@@ -28423,7 +28423,7 @@ public class ChatActivity extends BaseFragment implements
         return false;
     }
 
-    private void updatePinnedMessageView(boolean animated) {
+    public void updatePinnedMessageView(boolean animated) {
         updatePinnedMessageView(animated, 0);
     }
 
@@ -35510,7 +35510,7 @@ public class ChatActivity extends BaseFragment implements
     }
 
     boolean preventReopenSearchWithText = false;
-    private void openSearchWithUser(TLRPC.User user) {
+    public void openSearchWithUser(TLRPC.User user) {
         boolean delay = false;
         if (savedMessagesHint != null && savedMessagesHint.shown()) {
             savedMessagesHint.hide();
@@ -39098,7 +39098,7 @@ public class ChatActivity extends BaseFragment implements
         showDialog(builder.create());
     }
 
-    private class ChatMessageCellDelegate implements ChatMessageCell.ChatMessageCellDelegate {
+    public class ChatMessageCellDelegate implements ChatMessageCell.ChatMessageCellDelegate {
         @Override
         public boolean isReplyOrSelf() {
             return UserObject.isReplyUser(currentUser) || UserObject.isUserSelf(currentUser);
@@ -39920,7 +39920,7 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
-        private void appendMention(TLRPC.User user) {
+        public void appendMention(TLRPC.User user) {
             if (chatActivityEnterView != null) {
                 SpannableStringBuilder sb;
                 final CharSequence text = chatActivityEnterView.getFieldText();
@@ -40032,7 +40032,7 @@ public class ChatActivity extends BaseFragment implements
             return false;
         }
 
-        private void openProfile(TLRPC.User user) {
+        public void openProfile(TLRPC.User user) {
             openProfile(user, false);
         }
 
@@ -40065,7 +40065,7 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
-        private void openDialog(ChatMessageCell cell, TLRPC.User user) {
+        public void openDialog(ChatMessageCell cell, TLRPC.User user) {
             if (user != null) {
                 Bundle args = new Bundle();
                 args.putLong("user_id", user.id);

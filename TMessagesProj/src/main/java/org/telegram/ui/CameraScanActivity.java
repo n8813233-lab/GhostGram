@@ -165,6 +165,7 @@ public class CameraScanActivity extends BaseFragment {
     public static final int TYPE_QR = 1;
     public static final int TYPE_QR_LOGIN = 2;
     public static final int TYPE_QR_WEB_BOT = 3;
+    public static final int TYPE_QR_UNIVERSAL = 1390;
 
     public interface CameraScanActivityDelegate {
         default void didFindMrzInfo(MrzRecognizer.Result result) {
@@ -524,7 +525,7 @@ public class CameraScanActivity extends BaseFragment {
             viewGroup.addView(actionBar);
         }
 
-        if (currentType == TYPE_QR_LOGIN || currentType == TYPE_QR_WEB_BOT) {
+        if (currentType == TYPE_QR_LOGIN || currentType == TYPE_QR_WEB_BOT || currentType == TYPE_QR_UNIVERSAL) {
             actionBar.setTitle(LocaleController.getString(R.string.AuthAnotherClientScan));
         }
 
@@ -635,9 +636,14 @@ public class CameraScanActivity extends BaseFragment {
         } else {
             if (needGalleryButton && currentType != TYPE_QR_LOGIN) {
                 //titleTextView.setText(LocaleController.getString(R.string.WalletScanCode));
+                if (currentType == TYPE_QR_UNIVERSAL) {
+                    titleTextView.setText("");
+                }
             } else {
                 if (currentType == TYPE_QR || currentType == TYPE_QR_WEB_BOT) {
                     titleTextView.setText(LocaleController.getString(R.string.AuthAnotherClientScan));
+                } else if (currentType == TYPE_QR_UNIVERSAL) {
+                    titleTextView.setText("");
                 } else {
                     String text = LocaleController.getString(R.string.AuthAnotherClientInfo5);
                     SpannableStringBuilder spanned = new SpannableStringBuilder(text);
@@ -1565,7 +1571,7 @@ public class CameraScanActivity extends BaseFragment {
 
 
     private boolean isQr() {
-        return currentType == TYPE_QR || currentType == TYPE_QR_LOGIN || currentType == TYPE_QR_WEB_BOT;
+        return currentType == TYPE_QR || currentType == TYPE_QR_LOGIN || currentType == TYPE_QR_WEB_BOT || currentType == TYPE_QR_UNIVERSAL;
     }
 
     @Override

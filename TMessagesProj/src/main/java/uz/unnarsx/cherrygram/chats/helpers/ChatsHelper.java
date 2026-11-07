@@ -30,6 +30,7 @@ import androidx.core.content.FileProvider;
 
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BaseController;
+import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
@@ -72,6 +73,31 @@ public class ChatsHelper extends BaseController {
         } catch (Exception e) {
             CherrygramLogger.e(e);
         }
+    }
+
+    public String getPathToMessage(MessageObject messageObject) {
+        String path = messageObject.messageOwner.attachPath;
+        if (!TextUtils.isEmpty(path)) {
+            File temp = new File(path);
+            if (!temp.exists()) {
+                path = null;
+            }
+        }
+        if (TextUtils.isEmpty(path)) {
+            path = FileLoader.getInstance(UserConfig.selectedAccount).getPathToMessage(messageObject.messageOwner).toString();
+            File temp = new File(path);
+            if (!temp.exists()) {
+                path = null;
+            }
+        }
+        if (TextUtils.isEmpty(path)) {
+            path = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(messageObject.getDocument(), true).toString();
+            File temp = new File(path);
+            if (!temp.exists()) {
+                return null;
+            }
+        }
+        return path;
     }
 
     public CharSequence getMessageCaption(MessageObject messageObject, MessageObject.GroupedMessages group) {

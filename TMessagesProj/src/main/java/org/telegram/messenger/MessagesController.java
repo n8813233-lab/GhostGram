@@ -15779,6 +15779,11 @@ public class MessagesController extends BaseController implements NotificationCe
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
+    public void deleteParticipantFromChat(long chatId, TLRPC.User user, TLRPC.ChatFull info) {
+        // GhostGram: Cherrygram 的同名三参重载；供体六参实现里 info 未被使用，故直接委托现有五参版。
+        deleteParticipantFromChat(chatId, user, null, false, false);
+    }
+
     public void deleteParticipantFromChat(long chatId, TLRPC.User user, TLRPC.Chat chat, boolean forceDelete, boolean revoke) {
         if (user == null && chat == null) {
             return;

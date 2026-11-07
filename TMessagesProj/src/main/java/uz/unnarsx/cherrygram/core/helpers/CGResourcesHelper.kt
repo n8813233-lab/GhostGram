@@ -9,17 +9,19 @@
 
 package uz.unnarsx.cherrygram.core.helpers
 
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.os.Build
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.URLSpan
+import org.telegram.messenger.ApplicationLoader
 import org.telegram.messenger.BuildConfig
 import org.telegram.messenger.BuildVars
 import org.telegram.messenger.LocaleController
 import org.telegram.messenger.LocaleController.getString
 import org.telegram.messenger.R
 import org.telegram.ui.Components.URLSpanNoUnderline
-import org.telegram.ui.LauncherIconController
 import uz.unnarsx.cherrygram.core.CherrygramLogger
 import uz.unnarsx.cherrygram.core.configs.CherrygramCoreConfig
 import uz.unnarsx.cherrygram.core.configs.CherrygramMessagesConfig
@@ -176,10 +178,13 @@ object CGResourcesHelper {
     }
 
     fun isAnyOfBraIconsEnabled(): Boolean {
-        return (LauncherIconController.isEnabled(LauncherIconController.LauncherIcon.DARK_CHERRY_BRA)
-                || LauncherIconController.isEnabled(LauncherIconController.LauncherIcon.WHITE_CHERRY_BRA)
-                || LauncherIconController.isEnabled(LauncherIconController.LauncherIcon.VIOLET_SUNSET_CHERRY_BRA)
-        )
+        // GhostGram: Cherrygram 的 BRA 启动图标未随 C5 图标层移植（无 manifest 别名、
+        // 未进入图标选择器），此处直接按组件名查启用状态，与 LauncherIconController.isEnabled 语义一致。
+        val ctx = ApplicationLoader.applicationContext
+        val pm = ctx.packageManager
+        return listOf("CG_Icon_Dark_Bra", "CG_Icon_White_Cherry_Bra", "CG_Icon_Violet_Sunset_Bra").any { key ->
+            pm.getComponentEnabledSetting(ComponentName(ctx.packageName, "org.telegram.messenger.$key")) == PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        }
     }
 
     fun createDateAndTime(date: Long): String {
@@ -189,7 +194,7 @@ object CGResourcesHelper {
             val rightNow = Calendar.getInstance()
             rightNow.timeInMillis = dateAndTime
             return String.format(
-                $$"%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
+                "%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
                 Date(dateAndTime)
             ),
                 LocaleController.getInstance().formatterDay.format(Date(dateAndTime))
@@ -205,7 +210,7 @@ object CGResourcesHelper {
             val rightNow = Calendar.getInstance()
             rightNow.timeInMillis = dateAndTime
             return String.format(
-                $$"%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
+                "%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
                 Date(dateAndTime)
             ),
                 LocaleController.getInstance().formatterDayWithSeconds.format(Date(dateAndTime))

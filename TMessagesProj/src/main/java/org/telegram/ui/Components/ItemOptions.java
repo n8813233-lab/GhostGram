@@ -863,6 +863,13 @@ public class ItemOptions {
         return addText(text, textSizeDp, -1);
     }
 
+    public ItemOptions addTextIf(boolean condition, CharSequence text, int textSizeDp) {
+        if (!condition) {
+            return this;
+        }
+        return this.addText(text, textSizeDp, -1);
+    }
+
     public ItemOptions addText(CharSequence text, int textSizeDp, int maxWidth) {
         return addText(text, textSizeDp, null, maxWidth);
     }

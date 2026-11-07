@@ -1,32 +1,116 @@
 # GhostGram
 
-Android Telegram client built from the [Mango](https://github.com/2492866096/Mango) 4.9 codebase, with the appearance and feature set of [Cherrygram](https://github.com/arslan4k1390/Cherrygram) 11.4.0 ported in.
+一款以隐私干净为先的安卓 Telegram 第三方客户端：以 Mango 为代码底座，全量缝合 Cherrygram 的外观与功能，并彻底剥离两边上游自带的开发者远程控制与商业化组件。
 
-- Package: `com.Ghost.wed`
-- Appearance: Cherrygram (Solar icon pack, Cherry themes) — Mango's own appearance layer is not the default
-- Features: foundation + C1–C6 porting batches fully landed (sleep timer, vCard export, QR name card, local settings backup, message menu customization, message filtering, Gemini (user-supplied key only), per-scenario biometric chat locks, Braille spoilers, profile enhancements, chat toggles, main tab bar & folder customization, Solar icon pack, voice enhancements, CameraX basics)
+| 项目 | 内容 |
+| --- | --- |
+| 包名 | `com.Ghost.wed` |
+| 代码底座 | Mango Client 4.9 |
+| 外观 / 功能供体 | Cherrygram 11.4.0 |
+| 构建方式 | GitHub Actions 云端构建（见 `.github/workflows/build.yml`） |
+| 许可证 | GPL（与上游 Telegram 系代码库一致） |
+| 当前状态 | 功能缝合已全部完成，云端编译验证进行中，尚未真机实测 |
 
-## Privacy / red lines
+---
 
-Both upstream clients ship developer remote-control mechanisms. They are **removed** here and must stay removed:
+## 一、来源介绍
 
-- Mango: default remote MTProto proxy & proxy-list sync, auto-join channels, remote pinned dialogs / announcements / promoted accounts, remote scam & keyword lists, cloud (OTA) update channel
-- Cherrygram: hourly remote config, AdsGram, Firebase Analytics / Crashlytics identifiers, OTA updates via a Telegram channel, obfuscated self-check module, donation-list-based feature gating
+GhostGram 不是从零写起的客户端，而是一次有明确取舍的「双源缝合」：
 
-Donation-gated upstream features are ported unlocked and free. Third-party API keys (e.g. Gemini) are user-filled only, never hardcoded.
+- **底座取 Mango（4.9）**：Mango 是一款功能完整的 Telegram 安卓客户端，代码结构完整、可独立编译，适合作为承接一切的骨架。
+- **外观与功能取 Cherrygram（11.4.0）**：Cherrygram 的 Solar 图标体系、主题配色与大量实用功能口碑很好，但其公开源码并不完整——约 30 个关键常量（含其自有 API 凭据）从未公开，仓库本身无法独立编译，只能作为外观与功能的供体。
+- **取舍原则**：外观以 Cherrygram 为准，Mango 自带外观层不再作为默认；功能两边取长补短、全部缝合；两边上游的远程控制、广告统计与付费变现代码则一律不要（详见第三节）。
 
-## Build
+缝合按批次推进并全程留有审计记录：改名与双边剥离 → 外观资源与配置骨架 → 六批功能移植（基础小件、消息增强、隐私锁与资料页、标签栏与文件夹、图标包、语音与相机）。
 
-Built by GitHub Actions (see `.github/workflows/build.yml`): JDK 17, Android SDK platform 35 / build-tools 35.0.0, NDK 21.4.7075529, CMake 3.10.2.4988404, Gradle wrapper, `:TMessagesProj_App:assembleAfatRelease`.
+## 二、功能介绍
 
-Signing note: `gradle.properties` carries **public CI placeholder credentials** (`ghostgramci` / `ghostgram-ci`) and the workflow generates a throwaway CI keystore at build time, only so the build can complete its signing step. Release builds distributed by the maintainer are re-signed with the project's real key, which is **not** in this repository.
+### 外观
 
-`TMessagesProj_App/google-services.json` is an obvious placeholder (no real Firebase project); replace it with your own if you need Firebase-dependent functionality.
+- **Solar 图标体系**：358 个 Solar 风格图标资源整体引入，应用内图标默认按 Solar 呈现，并提供「默认 / Solar」图标包切换
+- **Cherry 主题**：8 套 Cherrygram 主题（含 AMOLED 纯黑、Monet 取色）整体替换为默认主题集，主题色键在底座基础上补齐 56 个 Cherry 专有色键
+- **主标签栏**：底部主标签栏按 Cherrygram 语义重做，标签可自定义增减与排序
 
-## Status
+### 效率小件
 
-Porting complete; compile verification in progress via CI. Not yet verified on a real device.
+- **睡眠定时**：音频播放支持定时关闭
+- **vCard 导出**：通讯录联系人可批量导出为 vCard 文件
+- **二维码名片**：生成与扫描 Telegram 二维码名片
+- **设置备份**：全部设置可导出为本地文件、跨设备导入恢复，全程纯本地、无云端中转
 
-## License
+### 消息增强
 
-GPL (same as the upstream Telegram/Mango codebases). Upstream Mango documentation is kept in `README_UPSTREAM.md`.
+- **消息菜单定制**：长按消息的菜单项可自由增减、排序，并提供紧凑菜单视图
+- **消息过滤**：本地关键词过滤引擎（与底座本地过滤合并为单一引擎），命中规则全在设备本地执行
+- **Gemini 助手**：聊天内 AI 摘要 / 问答 / 语音转录，API 密钥由使用者自行填写、直连 Google 官方接口，客户端不预置任何密钥
+- **盲文剧透**：剧透内容可用盲文形式呈现，渲染在本地完成
+
+### 隐私与聊天
+
+- **分场景生物锁**：打开应用、删除消息、查看特定聊天等场景可分别要求指纹 / 面容验证
+- **资料页增强**：展示账号注册日期、DC 数据中心等信息，全部由本地数据推算，不依赖外部服务
+- **聊天开关组**：隐藏「以频道身份发送」、归档手势、未读优先排序等二十余项细粒度开关
+
+### 文件夹
+
+- **文件夹栏定制**：文件夹栏样式、计数规则（可排除静音会话）、顶部文件夹名显示均可调
+- **文件夹图标选择器**：可为文件夹挑选自定义图标（注：底座数据模型无服务端同步字段，自选图标仅保存在本地，重装后需重设）
+
+### 语音与相机
+
+- **语音增强**：录音时静音系统提示音、语音消息连续播放、语音转文字（可走 Gemini 通道）
+- **CameraX 基础**：相机设置页与 CameraX 基础组件已引入（附加相机切换尚在接线中，当前版本选择 CameraX 暂无实际效果，应用仍使用原相机兜底）
+
+### 免费原则
+
+上游需要捐赠才解锁的功能（菜单定制、消息过滤、文件夹栏定制等），在本项目中**全部去掉付费墙、默认免费开启**；上游的收款卡号、返佣链接与支付组件则一个都不移植。
+
+## 三、隐私保护
+
+第三方客户端最大的风险，往往不是功能少，而是开发者在代码里留了「后门遥控」。本项目在缝合前对两个上游都做过源码级隐私审查，结论与处理如下：
+
+### 设计原则
+
+1. **零远程下发**：客户端不得从开发者服务器拉取任何可改变其行为的配置、名单、代理或更新包
+2. **零广告与统计**：不集成任何广告 SDK，不上报带用户标识的行为统计与崩溃信息
+3. **零预置凭据**：不硬编码任何第三方的 API 密钥、代理或收款信息；需要密钥的功能一律由使用者自填
+4. **本地优先**：备份、过滤、锁定、图标等功能全部在设备本地完成
+
+### 已剥离：Mango 的远程控制面（10 项机制）
+
+| 机制 | 原行为 | 本项目处理 |
+| --- | --- | --- |
+| 内置代理 | 首装默认启用开发者硬编码的 MTProto 代理，代理列表每 30 分钟从其云盘同步、可自动切换 | 硬编码代理与默认源全部删除，改为使用者自填 |
+| 自动加频道 | 登录后自动把账号加入远程文件指定的公开频道，且无关闭开关 | 整模块删除 |
+| 远程置顶 / 推广 | 远程下发置顶对话、推广账号、频道页 | 删除 |
+| 远程公告 | 开发者可随时向全体用户弹窗 | 删除 |
+| 远程名单 | 骗子标记、屏蔽名单、反诈词库均从其云盘下发 | 名单源清空，反诈改为纯本地规则 |
+| 云盘更新 | 从开发者云盘直下 APK 更新，代码内不做签名校验 | 整模块删除 |
+
+以上机制的宿主均为同一开发者的 123 云盘账号；剥离后全工程检索其域名与账号标识，结果为 0。
+
+### 已剥离：Cherrygram 的远程与商业化组件
+
+- **每小时远程配置**：可远程下发功能开关、捐赠卡号、返佣链接与硬编码代理——整通道切除
+- **AdsGram 广告 SDK**：会把用户 Telegram ID 与 IP 地址发送至广告平台——不移植
+- **Firebase Analytics / Crashlytics**：带用户 ID 与用户名的行为统计与崩溃上报——不移植
+- **OTA 更新**：从其 Telegram 频道拉取更新包——不移植
+- **混淆自检模块**：不可审计的签名 / 篡改自检代码——整模块不移植
+- **捐赠校验**：多处功能借远程捐赠名单做本地校验（含外观配置里隐藏的一处）——全部切除并改免费
+
+### 签名与占位说明
+
+- 仓库内 `gradle.properties` 的签名凭据（`ghostgramci` / `ghostgram-ci`）是**公开的 CI 占位值**，构建流程会现生成临时密钥库，仅用于让云端构建走完签名步骤
+- 正式发布包由维护者在本地以项目专用密钥重新签名，该密钥**不在本仓库内**
+- `TMessagesProj_App/google-services.json` 为明显的占位文件（无真实 Firebase 项目），需要相关功能者请换成自己的配置
+
+## 四、鸣谢上游开源项目
+
+GhostGram 站在以下开源项目的肩膀上，在此一并致谢：
+
+- **[Telegram](https://github.com/DrKLO/Telegram)**：官方安卓客户端开源代码，本项目一切的源头
+- **[Mango](https://github.com/2492866096/Mango)**（作者 [@2492866096](https://github.com/2492866096)）：提供完整可编译的代码底座；其上游说明文档保留在本仓库 `README_UPSTREAM.md`
+- **[Cherrygram](https://github.com/arslan4k1390/Cherrygram)**（作者 [@arslan4k1390](https://github.com/arslan4k1390)）：提供 Solar 图标体系、Cherry 主题与本项目绝大多数缝合功能的原始实现
+- **开源组件**：AndroidX CameraX、Google Gemini SDK 等（完整依赖见各模块 `build.gradle`）
+
+本项目与上述项目不存在隶属关系；对上游代码的修改（尤其是第三节所列的剥离）均为本项目维护者的决定。如上游作者对署名或许可证有任何意见，欢迎通过 Issue 联系。

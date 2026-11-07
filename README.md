@@ -102,7 +102,7 @@ All of these mechanisms were hosted on a single developer's 123Pan cloud storage
 
 - The signing credentials in `gradle.properties` (`ghostgramci` / `ghostgram-ci`) are **public CI placeholder values**; the build workflow generates a throwaway keystore at build time, solely so the cloud build can complete its signing step
 - Release packages distributed by the maintainer are re-signed locally with the project's dedicated key, which is **not** in this repository
-- `TMessagesProj_App/google-services.json` is an obvious placeholder file (no real Firebase project); replace it with your own configuration if you need the related functionality
+- `TMessagesProj_App/google-services.json` contains the maintainer's real Firebase project configuration (project `ghostgram-6a2e0`, registered for `com.Ghost.wed`) so that release builds can use FCM push. As Google documents, this file is not a secret — it ships inside every distributed APK. If you fork this project, replace it with your own Firebase configuration
 
 ## 4. Acknowledgements
 

@@ -119,8 +119,7 @@ android {
     // CI run 10 (42355960699): Cherrygram code uses switch expressions/rules
     // and pattern matching instanceof — Java 14+/16+ syntax, rejected by
     // -source 8. Raise to 17 (CI JDK is 17; language features only, no new
-    // APIs, so minSdk 23 is unaffected). Kotlin jvmTarget stays 1.8 — it
-    // compiled clean in run 10 and may target lower than the Java level.
+    // APIs, so minSdk 23 is unaffected).
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -128,10 +127,12 @@ android {
         coreLibraryDesugaringEnabled true
     }
 
-    // CI run 6 (42340359674): compileReleaseKotlin failed — Kotlin jvmTarget
-    // defaulted to the JDK (17) while Java compiles at 1.8. Align to 1.8.
+    // CI run 10 (42358754902): compileReleaseKotlin failed — Kotlin 2.1
+    // validates that Kotlin jvmTarget matches the Java target (17 vs 1.8
+    // was rejected as inconsistent). The earlier "Kotlin may target lower"
+    // assumption was wrong; align jvmTarget to 17 as well.
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
 
 

@@ -93,7 +93,7 @@ public class FoldersPreferencesEntry extends BaseCGPreferencesEntry {
                 .setChecked(CherrygramAppearanceConfig.INSTANCE.getFolderNameInHeader())
                 .slug("folderNameInHeader")
         );
-        items.add(SettingsHelper.asSwitchCG(foldersAtBottomRow, getString(R.string.AP_FoldersAtBottom) // GhostGram C4: PRO badge removed with the donation gate)
+        items.add(SettingsHelper.asSwitchCG(foldersAtBottomRow, getString(R.string.AP_FoldersAtBottom)) // GhostGram C4: PRO badge removed with the donation gate)
                 .setChecked(CherrygramAppearanceConfig.INSTANCE.getFoldersAtBottom()) // GhostGram C4: donation lock removed, free by default
                 .slug("foldersAtBottom")
         );

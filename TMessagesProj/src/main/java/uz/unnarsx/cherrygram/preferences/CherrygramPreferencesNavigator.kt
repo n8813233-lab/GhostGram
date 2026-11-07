@@ -43,11 +43,11 @@ object CherrygramPreferencesNavigator {
 
     // GhostGram C4 (PLAN.md 14.3): main-tabs preferences (order / enabled / titles)
     fun createMainTabs(fragment: BaseFragment): BaseFragment =
-        tabs.MainTabsPreferencesEntry().also(fragment::presentFragment)
+        MainTabsPreferencesEntry().also(fragment::presentFragment)
 
     // GhostGram C4 (PLAN.md 14.5): folder-tab preferences (mode / counters / stroke)
     fun createFolders(fragment: BaseFragment): BaseFragment =
-        folders.FoldersPreferencesEntry().also(fragment::presentFragment)
+        FoldersPreferencesEntry().also(fragment::presentFragment)
 
     // GhostGram C6 (PLAN.md 16.3): camera preferences (type / dual / enhancements / exposure)
     fun createCamera(fragment: BaseFragment): BaseFragment =

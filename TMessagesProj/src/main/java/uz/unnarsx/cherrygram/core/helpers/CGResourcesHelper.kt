@@ -194,7 +194,7 @@ object CGResourcesHelper {
             val rightNow = Calendar.getInstance()
             rightNow.timeInMillis = dateAndTime
             return String.format(
-                "%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
+                "%1\$s | %2\$s", LocaleController.getInstance().formatterYear.format(
                 Date(dateAndTime)
             ),
                 LocaleController.getInstance().formatterDay.format(Date(dateAndTime))
@@ -210,7 +210,7 @@ object CGResourcesHelper {
             val rightNow = Calendar.getInstance()
             rightNow.timeInMillis = dateAndTime
             return String.format(
-                "%1$s | %2$s", LocaleController.getInstance().formatterYear.format(
+                "%1\$s | %2\$s", LocaleController.getInstance().formatterYear.format(
                 Date(dateAndTime)
             ),
                 LocaleController.getInstance().formatterDayWithSeconds.format(Date(dateAndTime))

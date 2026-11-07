@@ -24,6 +24,8 @@ TMessagesProj_AppHuawei/afat/
 .env.*
 google-services.json
 **/google-services.json
+# Exception: the CI build needs the checked-in placeholder at TMessagesProj_App/
+!TMessagesProj_App/google-services.json
 **/local.properties
 **/build/
 

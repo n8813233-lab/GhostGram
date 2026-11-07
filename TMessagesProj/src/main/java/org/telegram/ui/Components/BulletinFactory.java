@@ -138,6 +138,8 @@ public final class BulletinFactory {
         PHOTO("PhotoSavedHint", R.string.PhotoSavedHint, Icon.SAVED_TO_GALLERY),
         PHOTOS("PhotosSavedHint", Icon.SAVED_TO_GALLERY),
 
+        STICKER("CG_StickerSavedHint", R.string.CG_StickerSavedHint, Icon.SAVED_TO_GALLERY),
+
         VIDEO("VideoSavedHint", R.string.VideoSavedHint, Icon.SAVED_TO_GALLERY),
         VIDEOS("VideosSavedHint", Icon.SAVED_TO_GALLERY),
 

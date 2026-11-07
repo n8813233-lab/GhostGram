@@ -33,6 +33,7 @@ import org.telegram.tgnet.json.TLJsonBuilder;
 import org.telegram.tgnet.json.TLJsonParser;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
+import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_payments;
 import org.telegram.tgnet.tl.TL_phone;
 import org.telegram.tgnet.tl.TL_stars;
@@ -62627,6 +62628,7 @@ public class TLRPC {
         public int schedule_repeat_period;
         public String summary_from_language;
         public String from_rank;
+        public TL_iv.RichMessage rich_message;
         public int send_state = 0; //custom
         public int fwd_msg_id = 0; //custom
         public String attachPath = ""; //custom
@@ -63535,6 +63537,9 @@ public class TLRPC {
             if (hasFlag(flags2, FLAG_11)) {
                 summary_from_language = stream.readString(exception);
             }
+            if (hasFlag(flags2, FLAG_13)) {
+                rich_message = TL_iv.RichMessage.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
         }
 
         public void serializeToStream(OutputSerializedData stream) {
@@ -63557,6 +63562,7 @@ public class TLRPC {
             flags2 = setFlag(flags2, FLAG_8, paid_suggested_post_stars);
             flags2 = setFlag(flags2, FLAG_9, paid_suggested_post_ton);
             flags2 = setFlag(flags2, FLAG_12, from_rank != null);
+            flags2 = setFlag(flags2, FLAG_13, rich_message != null);
             stream.writeInt32(flags2);
             stream.writeInt32(id);
             if ((flags & 256) != 0) {
@@ -63645,6 +63651,9 @@ public class TLRPC {
             }
             if (hasFlag(flags2, FLAG_11)) {
                 stream.writeString(summary_from_language);
+            }
+            if (hasFlag(flags2, FLAG_13)) {
+                rich_message.serializeToStream(stream);
             }
             writeAttachPath(stream);
         }

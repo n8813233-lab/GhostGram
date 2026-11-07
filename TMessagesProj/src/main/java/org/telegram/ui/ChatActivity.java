@@ -435,7 +435,7 @@ public class ChatActivity extends BaseFragment implements
     private ActionBarMenuItem.Item savedChatsItem, savedChatsGap;;
     private ActionBarMenuItem headerItem;
     private ActionBarMenu.LazyItem editTextItem;
-    protected ActionBarMenuItem searchItem;
+    public ActionBarMenuItem searchItem;
     protected ActionBarMenuItem topicCreateItem;
     private ActionBarMenuItem.Item translateItem;
     private ActionBarMenuItem searchIconItem;
@@ -599,6 +599,9 @@ public class ChatActivity extends BaseFragment implements
     private FrameLayout searchContainer;
     private ImageView searchCalendarButton;
     private ImageView searchUserButton;
+    /** Cherrygram start */
+    public ImageView searchFilterButton;
+    /** Cherrygram finish */
     private AnimatedTextView searchCountText;
     private AnimatedTextView searchExpandList;
     private AnimatedTextView searchOtherButton;
@@ -787,7 +790,7 @@ public class ChatActivity extends BaseFragment implements
 
     private MessageObject selectedObjectToEditCaption;
     private MessageObject selectedObject;
-    private MessageObject.GroupedMessages selectedObjectGroup;
+    public MessageObject.GroupedMessages selectedObjectGroup;
     private boolean forbidForwardingWithDismiss;
     public MessagePreviewParams messagePreviewParams;
     public MessageSuggestionParams messageSuggestionParams;
@@ -798,7 +801,7 @@ public class ChatActivity extends BaseFragment implements
     public MessageObject forwardingMessage;
     public MessageObject.GroupedMessages forwardingMessageGroup;
     private Boolean overrideHideForwardSendersNameForPanel;
-    private MessageObject.GroupedMessages replyingQuoteGroup;
+    public MessageObject.GroupedMessages replyingQuoteGroup;
     public MessageObject replyingTopMessage;
     private ReplyQuote replyingQuote;
     private boolean ignoreDraft;
@@ -981,7 +984,7 @@ public class ChatActivity extends BaseFragment implements
     private ChatObject.Call groupCall;
     private boolean lastCallCheckFromServer;
     private boolean createGroupCall;
-    protected TLRPC.ChatFull chatInfo;
+    public TLRPC.ChatFull chatInfo;
     protected TLRPC.UserFull userInfo;
 
     public ProfileChannelCell.ChannelMessageFetcher profileChannelMessageFetcher;
@@ -1114,7 +1117,7 @@ public class ChatActivity extends BaseFragment implements
     public static Pattern publicMsgUrlPattern;
     public static Pattern voiceChatUrlPattern;
     public static Pattern privateMsgUrlPattern;
-    private boolean waitingForSendingMessageLoad;
+    public boolean waitingForSendingMessageLoad;
     private ValueAnimator changeBoundAnimator;
     private Animator messageEditTextAnimator;
 
@@ -3466,7 +3469,6 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    @Override
     // GhostGram C3 (PLAN.md 13.8): donor method, verbatim. Ported now because the C2
     // ChatActivityHelper already calls it (PLAN.md 12.8 risk item); its donor call
     // sites sit in the TG13 bottom-channel-buttons flow, which the base structures
@@ -10577,6 +10579,9 @@ public class ChatActivity extends BaseFragment implements
                     if (searchUserButton != null && searchUserButton.getVisibility() != GONE) {
                         leftMargin += 48;
                     }
+                    if (searchFilterButton != null && searchFilterButton.getVisibility() != GONE) {
+                        leftMargin += 48;
+                    }
                     ((MarginLayoutParams) child.getLayoutParams()).leftMargin = AndroidUtilities.dp(leftMargin);
                 }
                 super.measureChildWithMargins(child, parentWidthMeasureSpec, widthUsed, parentHeightMeasureSpec, heightUsed);
@@ -10650,6 +10655,8 @@ public class ChatActivity extends BaseFragment implements
                 }
                 searchCalendarButton.setVisibility(View.GONE);
                 searchUserButton.setVisibility(View.GONE);
+                searchFilterButton.setVisibility(View.GONE);
+                CherrygramChatsConfig.INSTANCE.setMessagesSearchFilter(CherrygramChatsConfig.FILTER_NONE);
                 searchingForUser = true;
                 searchingUserMessages = null;
                 searchingChatMessages = null;
@@ -10676,6 +10683,25 @@ public class ChatActivity extends BaseFragment implements
             });
             searchCalendarButton.setContentDescription(LocaleController.getString(R.string.JumpToDate));
         }
+
+        /** Cherrygram start */
+        if (!searchingForUser && chatMode != MODE_SEARCH) {
+            searchFilterButton = new ImageView(getContext());
+            searchFilterButton.setScaleType(ImageView.ScaleType.CENTER);
+            searchFilterButton.setImageResource(R.drawable.msg_customize);
+            searchFilterButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_searchPanelIcons), PorterDuff.Mode.MULTIPLY));
+            searchFilterButton.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_actionBarActionModeDefaultSelector), 1));
+            int leftMargin = currentChat != null && (!ChatObject.isChannel(currentChat) || currentChat.megagroup) ? 92 : 44;
+            searchContainer.addView(searchFilterButton, LayoutHelper.createFrame(44, 44, Gravity.LEFT | Gravity.TOP, leftMargin, 0, 0, 0));
+            searchFilterButton.setOnClickListener(view -> {
+                if (getParentActivity() == null) {
+                    return;
+                }
+                ChatsHelper.getInstance(currentAccount).showSearchMessageFilterSelector(this);
+            });
+            searchFilterButton.setContentDescription(LocaleController.getString(R.string.CG_SearchFilter));
+        }
+        /** Cherrygram finish */
     }
 
     private void showSearchShowOther(boolean show) {
@@ -11254,7 +11280,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void searchUserMessages(TLRPC.User user, TLRPC.Chat chat) {
+    public void searchUserMessages(TLRPC.User user, TLRPC.Chat chat) {
         searchUserMessages(user, chat, true);
     }
 
@@ -13278,7 +13304,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void showMessagesSearchListView(boolean show) {
+    public void showMessagesSearchListView(boolean show) {
         if (messagesSearchListContainer == null || show && messagesSearchListContainer.getTag() != null || !show && messagesSearchListContainer.getTag() == null) {
             return;
         }
@@ -15113,7 +15139,7 @@ public class ChatActivity extends BaseFragment implements
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, null, false, 0, true);
     }
 
-    private Runnable onHideFieldPanelRunnable;
+    public Runnable onHideFieldPanelRunnable;
     public void showFieldPanelForReplyQuote(MessageObject messageObjectToReply, ReplyQuote quote) {
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, quote, false, 0, true);
     }
@@ -19515,7 +19541,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void addToSelectedMessages(MessageObject messageObject, boolean outside) {
+    public void addToSelectedMessages(MessageObject messageObject, boolean outside) {
         addToSelectedMessages(messageObject, outside, true);
     }
 
@@ -20046,7 +20072,7 @@ public class ChatActivity extends BaseFragment implements
         updateVisibleRows();
     }
 
-    private void updateActionModeTitle() {
+    public void updateActionModeTitle() {
         if (!isReport()) {
             if (!actionBar.isActionModeShowed()) {
                 return;
@@ -32631,7 +32657,7 @@ public class ChatActivity extends BaseFragment implements
 
     private ValueAnimator scrimViewAlphaAnimator;
 
-    private void closeMenu(boolean hideDim) {
+    public void closeMenu(boolean hideDim) {
         scrimPopupWindowHideDimOnDismiss = hideDim;
         if (scrimPopupWindow != null) {
             scrimPopupWindow.dismiss();
@@ -35337,7 +35363,7 @@ public class ChatActivity extends BaseFragment implements
         return messageObjects;
     }
 
-    private void alertUserOpenError(MessageObject message) {
+    public void alertUserOpenError(MessageObject message) {
         if (getParentActivity() == null) {
             return;
         }

@@ -332,6 +332,17 @@ public class MessageObject {
         return messageBlocked;
     }
 
+    public ArrayList<ReactionsLayoutInBubble.VisibleReaction> getCustomReactions() {
+        ArrayList<ReactionsLayoutInBubble.VisibleReaction> customReactions = new ArrayList<>();
+        for (int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            ReactionsLayoutInBubble.VisibleReaction visibleReactionPeer = ReactionsLayoutInBubble.VisibleReaction.fromTL(messageOwner.reactions.results.get(i).reaction);
+            if (visibleReactionPeer.documentId != 0) {
+                customReactions.add(ReactionsLayoutInBubble.VisibleReaction.fromTL(messageOwner.reactions.results.get(i).reaction));
+            }
+        }
+        return customReactions;
+    }
+
     public int currentAccount;
 
     public TLRPC.TL_channelAdminLogEvent currentEvent;

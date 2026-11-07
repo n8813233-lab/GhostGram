@@ -5483,7 +5483,7 @@ public class NotificationsController extends BaseController {
                                         if (ChatsPasswordHelper.getInstance(currentAccount).isChatLocked(messageObject) || ChatsPasswordHelper.getInstance(currentAccount).isEncryptedChat(messageObject)) {
                                             finalText = ChatsPasswordHelper.getInstance(currentAccount).replaceStringToSpoilers(messageObject.caption.toString(), true);
                                         } else if (messageObject.shouldBlockMessage()) {
-                                            finalText = MessagesFilterHelper.INSTANCE.spoilerText(messageObject, finalText);
+                                            finalText = MessagesFilterHelper.INSTANCE.spoilerText(messageObject, finalText).toString();
                                         }
                                         messagingStyle.addMessage(finalText, ((long) messageObject.messageOwner.date) * 1000, person);
                                     }

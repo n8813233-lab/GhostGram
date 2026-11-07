@@ -5848,6 +5848,7 @@
     <string name="SubscribeToPremium">Subscribe for %s per month</string>
     <string name="SubscribeToPremiumPerYear">Subscribe for %s per year</string>
     <string name="SubscribeToPremiumPerCustom">Subscribe for %1$s / %2$s</string>
+    <string name="ConvertGroupAlert">This action is irreversible. It is not possible to downgrade a supergroup to a regular group.</string>
     <string name="UpgradeGroup">Upgrade to Supergroup</string>
     <string name="UpgradePremiumPerMonth">Upgrade for %s per year</string>
     <string name="UpgradePremiumPerYear">Upgrade for %s per year</string>

@@ -302,7 +302,7 @@ public class PasskeysController {
     public static void openSettings(Activity activity) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                android.credentials.CredentialManager.create(activity).createSettingsPendingIntent().send();
+                CredentialManager.create(activity).createSettingsPendingIntent().send();
             }
         } catch (PendingIntent.CanceledException ignored) {
         }

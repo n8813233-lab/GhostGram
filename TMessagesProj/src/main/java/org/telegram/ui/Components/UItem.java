@@ -817,4 +817,20 @@ public class UItem extends AdapterWithDiffUtils.Item {
         if (factory == null) throw new RuntimeException("UItemFactory was not setuped: " + factoryClass);
         return factory;
     }
+
+    /** Cherrygram start */
+    public String slug;
+
+    public boolean checkboxHidden;
+
+    public UItem hideCheckbox(boolean checkboxHidden) {
+        this.checkboxHidden = checkboxHidden;
+        return this;
+    }
+
+    public UItem slug(String slug) {
+        this.slug = slug;
+        return this;
+    }
+    /** Cherrygram finish */
 }

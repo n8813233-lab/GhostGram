@@ -1301,6 +1301,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             valueView.setText(value);
         }
 
+        public void setValueCG(CharSequence value) {
+            subtitleView.setVisibility(!TextUtils.isEmpty(value) ? View.VISIBLE : View.GONE);
+            subtitleView.setText(value);
+        }
+
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             super.onMeasure(

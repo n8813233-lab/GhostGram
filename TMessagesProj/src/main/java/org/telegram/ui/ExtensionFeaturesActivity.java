@@ -747,31 +747,31 @@ public class ExtensionFeaturesActivity extends BaseFragment {
                 return;
             case ITEM_CG_MESSAGE_MENU:
                 // GhostGram C2 (PLAN.md 12.5): Cherry message-menu preferences
-                CherrygramPreferencesNavigator.createMessageMenu(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createMessageMenu(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_MESSAGE_FILTERS:
                 // GhostGram C2 (PLAN.md 12.5): Cherry message-filter preferences
-                CherrygramPreferencesNavigator.createMessageFilter(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createMessageFilter(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_GEMINI:
                 // GhostGram C2 (PLAN.md 12.5): Cherry Gemini preferences (user-supplied key only)
-                CherrygramPreferencesNavigator.createGemini(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createGemini(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_PRIVACY:
                 // GhostGram C3 (PLAN.md 13.4): Cherry privacy / biometric-lock preferences
-                CherrygramPreferencesNavigator.createPrivacy(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createPrivacy(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_CHATS:
                 // GhostGram C3 (PLAN.md 13.7): Cherry chat-behavior preferences
-                CherrygramPreferencesNavigator.createChats(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createChats(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_MAIN_TABS:
                 // GhostGram C4 (PLAN.md 14.3): Cherry main-tabs preferences
-                CherrygramPreferencesNavigator.createMainTabs(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createMainTabs(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_FOLDERS:
                 // GhostGram C4 (PLAN.md 14.5): Cherry folder-tab preferences
-                CherrygramPreferencesNavigator.createFolders(this); // the navigator factory presents the fragment itself (donor semantics)
+                CherrygramPreferencesNavigator.INSTANCE.createFolders(this); // the navigator factory presents the fragment itself (donor semantics)
                 return;
             case ITEM_CG_ICON_PACK:
                 // GhostGram C5 (PLAN.md 15.4): Cherry icon-pack switch, donor iconPackRow semantics
@@ -794,7 +794,7 @@ public class ExtensionFeaturesActivity extends BaseFragment {
                 return;
             case ITEM_CG_CAMERA:
                 // GhostGram C6 (PLAN.md 16.3): Cherry camera preferences
-                CherrygramPreferencesNavigator.createCamera(this);
+                CherrygramPreferencesNavigator.INSTANCE.createCamera(this);
                 return;
             case ITEM_ID_SAVE_RECALLED:
                 enabled = !org.telegram.messenger.RecalledMessagesStore.isEnabled(currentAccount);

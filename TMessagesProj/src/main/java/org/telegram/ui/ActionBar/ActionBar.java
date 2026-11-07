@@ -55,6 +55,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.UserConfig;
 import org.telegram.ui.Adapters.FiltersView;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BackupImageView;
@@ -441,6 +442,30 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         }
     }
 
+    // GhostGram: donor overload createTitleTextView(int, boolean gilroy); FontHelper (uz.unnarsx.cherrygram.helpers.ui.FontHelper) is not ported in this tree, so the gilroy branch falls back to bold (visual only).
+    private void createTitleTextView(int i, boolean gilroy) {
+        if (titleTextView[i] != null) {
+            return;
+        }
+        titleTextView[i] = new SimpleTextView(getContext());
+        titleTextView[i].setGravity(isCenterTitle ? Gravity.CENTER : Gravity.LEFT | Gravity.CENTER_VERTICAL);
+        if (titleColorToSet != 0) {
+            titleTextView[i].setTextColor(titleColorToSet);
+        } else {
+            titleTextView[i].setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
+        }
+        titleTextView[i].setEmojiColor(titleTextView[i].getTextColor());
+        titleTextView[i].setTypeface(AndroidUtilities.bold());
+        titleTextView[i].setDrawablePadding(dp(4));
+        titleTextView[i].setPadding(0, dp(8), 0, dp(8));
+        titleTextView[i].setRightDrawableTopPadding(-dp(1));
+        if (useContainerForTitles) {
+            titlesContainer.addView(titleTextView[i], 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
+        } else {
+            addView(titleTextView[i], 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP));
+        }
+    }
+
     private boolean isCenterTitle;
 
     public void centerTitle() {
@@ -477,6 +502,27 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                 ((AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable) lastRightDrawable).setParentView(titleTextView[0]);
             }
             titleTextView[0].setRightDrawableOnClick(rightDrawableOnClickListener);
+        }
+        fromBottom = false;
+    }
+
+    public void setTitle(CharSequence value, Drawable rightDrawable, boolean gilroy) {
+        if (value != null && titleTextView[0] == null) {
+            createTitleTextView(0, gilroy);
+        }
+        if (titleTextView[0] != null) {
+            titleTextView[0].setVisibility(value != null && !isSearchFieldVisible ? VISIBLE : INVISIBLE);
+            titleTextView[0].setText(lastTitle = value);
+            if (UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
+                if (attached && lastRightDrawable instanceof AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable) {
+                    ((AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable) lastRightDrawable).setParentView(null);
+                }
+                titleTextView[0].setRightDrawable(lastRightDrawable = rightDrawable);
+                if (attached && lastRightDrawable instanceof AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable) {
+                    ((AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable) lastRightDrawable).setParentView(titleTextView[0]);
+                }
+                titleTextView[0].setRightDrawableOnClick(rightDrawableOnClickListener);
+            }
         }
         fromBottom = false;
     }

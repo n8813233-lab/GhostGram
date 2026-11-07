@@ -6896,6 +6896,22 @@ public class AndroidUtilities {
         return isHonor;
     }
 
+    public static void selectionSort(ArrayList<CharSequence> x, ArrayList<String> y) {
+        for (int i = 0; i < x.size() - 1; i++) {
+            for (int j = i + 1; j < x.size(); j++) {
+                if (x.get(i).toString().compareTo(x.get(j).toString()) > 0) {
+                    CharSequence temp = x.get(i);
+                    x.set(i, x.get(j));
+                    x.set(j, temp);
+
+                    String tempStr = y.get(i);
+                    y.set(i, y.get(j));
+                    y.set(j, tempStr);
+                }
+            }
+        }
+    }
+
     public static CharSequence withLearnMore(CharSequence text, Runnable onClick) {
         SpannableString link = new SpannableString(getString(R.string.LearnMoreArrow));
         link.setSpan(new ClickableSpan() {

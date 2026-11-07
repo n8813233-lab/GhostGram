@@ -43,6 +43,7 @@ import org.telegram.ui.Cells.SlideIntChooseView;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextCheckCell2;
+import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextRightIconCell;
 import org.telegram.ui.Cells.TextSettingsCell;
@@ -118,6 +119,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public static final int VIEW_TYPE_TEXT_SETTINGS = 43;
 
     // GhostGram C1 (PLAN.md 11.3): Cherrygram adapter view types, values match the donor
+    public static final int VIEW_TYPE_TEXT_DETAIL_SETTINGS = 100;
     public static final int VIEW_TYPE_SPACE_CG = 101;
     public static final int VIEW_TYPE_CUSTOM_WITH_BACKGROUND = 102;
 
@@ -412,6 +414,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_SWITCH:
             case VIEW_TYPE_EXPANDABLE_SWITCH:
             case VIEW_TYPE_TEXT_SETTINGS:
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS:
                 return true;
         }
         return false;
@@ -606,6 +609,10 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_EXPANDABLE_SWITCH:
                 view = new TextCheckCell2(context);
                 break;
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS: {
+                view = new TextDetailSettingsCell(context);
+                break;
+            }
         }
         if (shouldApplyBackground(viewType)) {
             view.setBackgroundColor(getThemedColor(key_background));
@@ -1065,6 +1072,16 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     }
                 }
                 break;
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS: {
+                TextDetailSettingsCell textDetailSettingsCell = (TextDetailSettingsCell) holder.itemView;
+                textDetailSettingsCell.setMultilineDetail(true);
+                if (item.iconResId != 0 && item.textValue != null) {
+                    textDetailSettingsCell.setTextAndValueAndIcon(item.text.toString(), item.textValue, item.iconResId, divider);
+                } else if (item.textValue != null) {
+                    textDetailSettingsCell.setTextAndValue(item.text.toString(), item.textValue, divider);
+                }
+                break;
+            }
         }
         if (item.bind != null) {
             item.bind.run(holder.itemView);
@@ -1162,7 +1179,8 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 viewType == VIEW_TYPE_ROUND_GROUP_CHECKBOX ||
                 viewType == VIEW_TYPE_SWITCH ||
                 viewType == VIEW_TYPE_EXPANDABLE_SWITCH ||
-                viewType == VIEW_TYPE_SHADOW_COLLAPSE_BUTTON
+                viewType == VIEW_TYPE_SHADOW_COLLAPSE_BUTTON ||
+                viewType == VIEW_TYPE_TEXT_DETAIL_SETTINGS
             );
         }
         return clickable && (item == null || item.enabled);

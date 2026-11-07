@@ -49,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import uz.unnarsx.cherrygram.core.ui.CGBulletinCreator;
-import uz.unnarsx.cherrygram.misc.CherrygramExtras;
 import uz.unnarsx.cherrygram.preferences.ChatsPreferencesEntry;
 
 public class PopupHelper {
@@ -279,10 +278,12 @@ public class PopupHelper {
             Runnable onConfirm,
             Runnable onDismissRunnable
     ) {
-        if (!kaboom && CherrygramExtras.isUserAccountAdded(1714120111L) && onConfirm != null) {
-            onConfirm.run();
-            return;
-        }
+        // GhostGram: donor here auto-confirmed the warning (skipped the dialog)
+        // when upstream developer account 1714120111L was logged in on the device
+        // (CherrygramExtras.isUserAccountAdded). That special bypass is dropped:
+        // the warning dialog is always shown, as it is for every normal user
+        // (the condition is false for them in the donor too). No channel-follow
+        // or promotion logic from CherrygramExtras is ported.
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
 

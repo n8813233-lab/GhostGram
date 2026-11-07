@@ -65,6 +65,7 @@ import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 
 import uz.unnarsx.cherrygram.chats.helpers.ChatsPasswordHelper;
+import uz.unnarsx.cherrygram.chats.helpers.MessageHelper;
 import uz.unnarsx.cherrygram.helpers.ProfileActivityHelper;
 
 import java.util.ArrayList;
@@ -923,6 +924,11 @@ public abstract class BaseFragment {
      * G6 locked-chats helper and the G5 profile helper. The password
      * getter also resolves the C2 risk item 10 head entry: ChatActivityHelper
      * (ported in C2) calls it for its lock/unlock menu branches. */
+    /** Cherrygram start */
+    public MessageHelper getMessageHelper() {
+        return MessageHelper.getInstance(currentAccount);
+    }
+
     public ChatsPasswordHelper getChatsPasswordHelper() {
         return ChatsPasswordHelper.getInstance(currentAccount);
     }

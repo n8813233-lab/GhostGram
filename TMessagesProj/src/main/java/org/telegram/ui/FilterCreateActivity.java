@@ -2374,6 +2374,8 @@ public class FilterCreateActivity extends BaseFragment {
         private int colorKey;
         private Text text;
 
+        public float backgroundHeight = dp(14.66f);
+
         public TextSpan(String text, float fontSize, int colorKey, Theme.ResourcesProvider resourcesProvider) {
             this.resourcesProvider = resourcesProvider;
             this.colorKey = colorKey;
@@ -2391,7 +2393,7 @@ public class FilterCreateActivity extends BaseFragment {
             final int color = Theme.getColor(colorKey, resourcesProvider);
             bgPaint.setColor(Theme.multAlpha(color, .15f));
             final float cy = (bottom + top) / 2f;
-            final float height = dp(14.66f);
+            final float height = backgroundHeight;
             AndroidUtilities.rectTmp.set(_x, cy - height / 2f, _x + this.text.getWidth() + dp(9.33f), cy + height / 2f);
             canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(4), dp(4), bgPaint);
             this.text.draw(canvas, _x + dp(4.66f), cy, color, 1.0f);

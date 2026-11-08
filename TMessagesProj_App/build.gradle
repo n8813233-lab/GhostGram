@@ -14,6 +14,8 @@ configurations {
 
 configurations.all {
     exclude group: 'com.google.firebase', module: 'firebase-core'
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): see TMessagesProj - media3 artifacts duplicate the locally built modules.
+    exclude group: 'androidx.media3'
     exclude group: 'androidx.recyclerview', module: 'recyclerview'
 }
 

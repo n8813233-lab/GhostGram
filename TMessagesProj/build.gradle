@@ -41,6 +41,10 @@ configurations {
 configurations.all {
     exclude group: 'com.google.firebase', module: 'firebase-core'
     exclude group: 'androidx.recyclerview', module: 'recyclerview'
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): all media3 comes from this base's
+    // locally built modules; the published artifacts (pulled in transitively
+    // by CameraX) duplicate them and fail R8.
+    exclude group: 'androidx.media3'
 }
 
 dependencies {

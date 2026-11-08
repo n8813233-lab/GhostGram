@@ -5802,12 +5802,12 @@
     <string name="BioLimitTitle">Bio</string>
     <string name="BioLimitSubtitle">Add more symbols and use links in your bio.</string>
     <string name="AppIcon">App Icon</string>
-    <string name="AppIconGhost Blue">Ghost Blue</string>
+    <string name="AppIconDefault">Ghost Blue</string>
     <string name="AppIconVintage">Vintage</string>
-    <string name="AppIconGhost Frost">Ghost Frost</string>
-    <string name="AppIconGhost Gloss">Ghost Gloss</string>
-    <string name="AppIconGhost Night">Ghost Night</string>
-    <string name="AppIconGhost Ink">Ghost Ink</string>
+    <string name="AppIconAqua">Ghost Frost</string>
+    <string name="AppIconPremium">Ghost Gloss</string>
+    <string name="AppIconTurbo">Ghost Night</string>
+    <string name="AppIconNox">Ghost Ink</string>
     <string name="AppIconChangedTo">App icon has been changed to %1$s</string>
     <string name="FileTooLarge">File Too Large</string>
     <string name="PremiumPreviewAppIcon">Premium App Icon</string>

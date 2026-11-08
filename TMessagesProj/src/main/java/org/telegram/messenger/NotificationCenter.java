@@ -388,6 +388,7 @@ public class NotificationCenter {
     // GhostGram 2.0 phase 2 (PLAN.md 29.4): custom ids for the ported CG features.
     public static final int keywordFilterSettingsUpdated = totalEvents++;
     public static final int cgTabsUpdated = totalEvents++;
+    public static final int cgUpdateSearchFiledVisibility = totalEvents++;
 
     public static boolean alreadyLogged;
 

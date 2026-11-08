@@ -251,15 +251,9 @@ public class ChatInputPreviewView extends FrameLayout {
                 glassBackgroundDrawableFactory.create(chatInputViewsContainer, blurredBackgroundColorProvider)
         );
 
-        if (CherrygramChatsConfig.INSTANCE.getIOSMessageInputField()) {
-            chatInputViewsContainer.setLeftBubbleDrawable(
-                    glassBackgroundDrawableFactory.create(chatInputViewsContainer, blurredBackgroundColorProvider)
-            );
-
-            chatInputViewsContainer.setRightBubbleDrawable(
-                    glassBackgroundDrawableFactory.create(chatInputViewsContainer, blurredBackgroundColorProvider)
-            );
-        }
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): the old base's left/right
+        // bubble drawables on ChatInputViewsContainer do not exist here;
+        // inugram's input island drawable (set above) covers the glass look.
     }
 
     private void updateInputBubbleOffsets() {
@@ -268,9 +262,8 @@ public class ChatInputPreviewView extends FrameLayout {
             chatInputViewsContainer.setInputBubbleHeight(bubbleHeight);
         }
 
-        if (chatActivityEnterView != null) {
-            chatActivityEnterView.checkBubbles();
-        }
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): checkBubbles() was old-base
+        // donor bubble-width machinery; the enter view self-layouts here.
     }
 
     @Override

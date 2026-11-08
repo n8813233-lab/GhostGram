@@ -2639,6 +2639,21 @@ public class ChatActivityEnterView extends FrameLayout implements
         this(context, parent, fragment, isChat, null);
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor preview ctor + container
+    // bookkeeping the CG input preview uses (publish parity; the preview cell
+    // drives its ChatInputViewsContainer directly on this base).
+    private boolean forcePreview;
+    private ChatInputViewsContainer chatInputViewsContainer;
+
+    public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat, Theme.ResourcesProvider resourcesProvider, boolean forcePreview) {
+        this(context, parent, fragment, isChat, resourcesProvider);
+        this.forcePreview = forcePreview;
+    }
+
+    public void setChatInputViewsContainer(ChatInputViewsContainer chatInputViewsContainer) {
+        this.chatInputViewsContainer = chatInputViewsContainer;
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat, Theme.ResourcesProvider resourcesProvider) {
         super(context);

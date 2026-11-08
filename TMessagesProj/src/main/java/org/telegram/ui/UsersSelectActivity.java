@@ -1668,4 +1668,31 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
         keys.add(Theme.key_actionBarDefault);
         keys.add(Theme.key_windowBackgroundWhite);
     }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram picker modes. The CG
+    // settings entries set their result delegate on the activity themselves
+    // (that is where selections are persisted); these setters only switch the
+    // picker mode + allowSelf, as in the donor.
+    public final static int TYPE_LOCKED_CHATS = 1390;
+    public final static int TYPE_FILTER_EXCLUDED_CHATS = 1391;
+    public final static int TYPE_FILTER_IGNORED_CHATS = 1392;
+
+    public UsersSelectActivity asLockedChats() {
+        type = TYPE_LOCKED_CHATS;
+        allowSelf = true;
+        return this;
+    }
+
+    public UsersSelectActivity asFilterExcludedChats() {
+        type = TYPE_FILTER_EXCLUDED_CHATS;
+        allowSelf = true;
+        return this;
+    }
+
+    public UsersSelectActivity asIgnoredChats() {
+        type = TYPE_FILTER_IGNORED_CHATS;
+        allowSelf = false;
+        return this;
+    }
+
 }

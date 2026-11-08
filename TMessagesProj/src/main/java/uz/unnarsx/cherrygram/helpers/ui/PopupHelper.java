@@ -146,7 +146,9 @@ public class PopupHelper {
             }
 
             boolean requireDonate = false; // GhostGram C2 (PLAN.md 12.2): donor gated this switch-alert row behind the remote Marketplace donor list (PLAN 8.1 C9); the list mechanism is not ported and gated features are free by default, so the lock is permanently off. donateLock is kept for API parity with donor callers.
-            if (requireDonate) textCell.setCheckBoxIcon(R.drawable.permission_locked);
+            // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor setCheckBoxIcon call
+            // dropped - requireDonate is permanently false (see above) and this
+            // base's TextCell checkbox is a Switch with no icon slot.
 
             linearLayout.addView(textCell);
             int finalA = a;

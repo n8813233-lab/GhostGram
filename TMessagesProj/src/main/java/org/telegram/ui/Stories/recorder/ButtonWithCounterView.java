@@ -70,6 +70,20 @@ public class ButtonWithCounterView extends FrameLayout implements Loadable, Them
         return this;
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor overload (md3 = white surface).
+    public ButtonWithCounterView setNeutral(boolean md3) {
+        if (!md3) {
+            return setNeutral();
+        }
+        this.neutral = true;
+        setFilled(true);
+        if (!customBackgroundColor) {
+            backgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
+            setFilledBackground();
+        }
+        return this;
+    }
+
     public ButtonWithCounterView setNeutral() {
         this.neutral = true;
         setFilled(true);

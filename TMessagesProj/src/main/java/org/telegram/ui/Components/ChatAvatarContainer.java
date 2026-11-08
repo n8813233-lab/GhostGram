@@ -126,6 +126,21 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatusDrawable;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerificationDrawable;
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor surface the CG header preview
+    // uses (publish parity; moveText is stored + relayout only, as on the old base).
+    private boolean moveText = false;
+
+    public void setMoveText(boolean moveText) {
+        if (this.moveText != moveText) {
+            this.moveText = moveText;
+            requestLayout();
+        }
+    }
+
+    public boolean isCentered() {
+        return false;
+    }
+
     protected boolean useAnimatedSubtitle() {
         return false;
     }

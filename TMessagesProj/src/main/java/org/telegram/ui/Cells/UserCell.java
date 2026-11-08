@@ -74,7 +74,7 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     private CheckBoxSquare checkBoxBig;
     private ImageView checkBox3;
     private TextView adminTextView;
-    private TextView addButton;
+    public TextView addButton; // GhostGram 2.0 phase 2 (PLAN.md 29.4): widened for the ported CG pages (donor parity).
     private Drawable premiumDrawable;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerification;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatus;
@@ -139,6 +139,11 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
 
     public UserCell(Context context, int padding, int checkbox, boolean admin, boolean needAddButton, Theme.ResourcesProvider resourcesProvider) {
         this(context, padding, checkbox, admin, needAddButton, resourcesProvider, false);
+    }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor 8-arg ctor (allowLongPress unused on this base).
+    public UserCell(Context context, int padding, int checkbox, boolean admin, boolean needAddButton, Theme.ResourcesProvider resourcesProvider, boolean needMutualIcon, boolean allowLongPress) {
+        this(context, padding, checkbox, admin, needAddButton, resourcesProvider, needMutualIcon);
     }
 
     public UserCell(Context context, int padding, int checkbox, boolean admin, boolean needAddButton, Theme.ResourcesProvider resourcesProvider, boolean inu_needMutualIcon) {

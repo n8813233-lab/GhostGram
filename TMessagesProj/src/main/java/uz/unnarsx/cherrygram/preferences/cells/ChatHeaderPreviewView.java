@@ -143,8 +143,10 @@ public class ChatHeaderPreviewView extends FrameLayout {
         }
 
         actionBar.addView(avatarContainer, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.START | Gravity.TOP, 54, 0, isTitleCentered ? 0 : 54, 0));
-        actionBar.setChatAvatarContainer2(avatarContainer);
-        actionBar.setForceAdaptiveWidth(CherrygramChatsConfig.INSTANCE.getCenterChatTitle() && CherrygramChatsConfig.INSTANCE.getCenterChatTitle_AdaptiveWidth());
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): the old base's ActionBar donor
+        // hooks (setChatAvatarContainer2/setForceAdaptiveWidth - glass pill
+        // width machinery) do not exist on this base; inugram's own ActionBar
+        // glass handles the header, the container is already added as a child.
     }
 
     @Override
@@ -203,12 +205,10 @@ public class ChatHeaderPreviewView extends FrameLayout {
     }
 
     public void updateIOSUnreadBadge() {
-        if (actionBar != null && actionBar.backButtonImageView != null) {
-            actionBar.setIOSUnreadBadgeAvailable(CherrygramChatsConfig.INSTANCE.getUnreadBadgeOnBackButton_iOS() && isTitleCentered);
-            actionBar.backButtonImageView.checkUnreadView(10);
-
-            actionBar.updateBackPillWidth(true);
-        }
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): not wired on this base - the
+        // iOS unread badge on the back pill was old-base ActionBar donor
+        // machinery (setIOSUnreadBadgeAvailable/checkUnreadView/
+        // updateBackPillWidth); inugram's ActionBar has no equivalent hook.
     }
 
     private TLRPC.User getUser() {

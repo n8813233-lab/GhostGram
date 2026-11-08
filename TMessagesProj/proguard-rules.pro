@@ -94,3 +94,8 @@
 # Use -keep to explicitly keep any other classes shrinking would remove
 #-dontoptimize
 #-dontobfuscate
+# GhostGram 2.0 phase 2 (PLAN.md 29.4): jackson-databind (ported CG JSON
+# viewer) references desktop-only JDK classes absent on Android; they are
+# only probed reflectively by jackson's Java7/Java8 support shims.
+-dontwarn java.beans.**
+-dontwarn java.lang.management.**

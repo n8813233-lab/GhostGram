@@ -255,7 +255,8 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        // GhostGram 2.0 phase 2: matched to the Java 17 level above (JVM target validation).
+        jvmTarget = "17"
     }
 
     defaultConfig {

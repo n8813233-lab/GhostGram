@@ -259,9 +259,10 @@ public class AppearancePreferencesEntry extends BaseCGPreferencesEntry {
                 CherrygramAppearanceConfig.INSTANCE.setIconReplacement(configValues.get(i));
                 SettingsHelper.updateButtonValue(view, getIconPackValueText());
 
-                if (getParentActivity() instanceof LaunchActivity) {
-                    ((LaunchActivity) getParentActivity()).reloadResources();
-                }
+                // GhostGram 2.0 phase 2 (PLAN.md 29.4): the old base's
+                // LaunchActivity.reloadResources() (CG icon-replacement cache
+                // flush) does not exist here - icon packs are inugram-native
+                // on this base; the theme reload + view rebuild below remain.
                 Theme.reloadAllResources(getContext() != null ? getContext() : org.telegram.messenger.ApplicationLoader.applicationContext);
 
                 getParentLayout().rebuildAllFragmentViews(false, false);

@@ -116,8 +116,9 @@ public class ChatInputPreviewView extends FrameLayout {
 
         chatActivityEnterView.setAllowStickersAndGifs(true, true, true);
         chatActivityEnterView.setDialogId(fragment.getUserConfig().clientUserId, UserConfig.selectedAccount);
-        chatActivityEnterView.updateSendAsButtonPreview();
-        chatActivityEnterView.updateAudioVideoButton();
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): updateSendAsButtonPreview()/
+        // updateAudioVideoButton() were old-base donor preview initializers;
+        // the enter view renders its standard input field here without them.
 
         chatActivityEnterView.setDelegate(new ChatActivityEnterView.ChatActivityEnterViewDelegate() {
             @Override

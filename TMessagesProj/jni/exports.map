@@ -1,0 +1,9 @@
+{
+  global:
+    Java_*;        # all JNI functions resolved by name
+    JNI_OnLoad;
+    JNI_OnUnload;
+    sqlite3_*;     # only when built with INU_EXPORT_SQLITE, hidden otherwise
+  local:
+    *;             # hide everything else (FFmpeg, libyuv, webrtc, ...)
+};

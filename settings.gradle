@@ -1,0 +1,50 @@
+import java.nio.channels.FileChannel
+import java.nio.channels.FileLock
+import java.nio.file.StandardOpenOption
+
+abstract class InuBuildLock implements BuildService<Params>, AutoCloseable {
+    interface Params extends BuildServiceParameters {
+        Property<String> getLockPath()
+    }
+
+    private final FileChannel channel
+    private final FileLock lock
+
+    InuBuildLock() {
+        def file = new File(parameters.lockPath.get())
+        file.parentFile.mkdirs()
+        channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+        def acquired = channel.tryLock()
+        if (acquired == null) {
+            println "> Waiting for another build to release ${file}"
+            acquired = channel.lock()
+        }
+        lock = acquired
+    }
+
+    @Override
+    void close() {
+        lock.release()
+        channel.close()
+    }
+}
+
+gradle.sharedServices.registerIfAbsent('inuBuildLock', InuBuildLock) {
+    parameters.lockPath = new File(settingsDir, '.gradle/inu-build.lock').absolutePath
+}.get()
+
+include ':TMessagesProj'
+include ':TMessagesProj_App'
+include ':InuCore'
+include ':jlatexmath'
+project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+gradle.ext.androidxMediaModulePrefix = 'TMessagesProj_Modules:media3:media-'
+apply from: file("TMessagesProj_Modules/media/core_settings.gradle")

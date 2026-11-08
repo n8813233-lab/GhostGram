@@ -1,0 +1,256 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.telegram.build-app-plugin'
+apply plugin: 'kotlin-android'
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+configurations {
+    compile.exclude module: 'support-v4'
+}
+
+configurations.all {
+    exclude group: 'com.google.firebase', module: 'firebase-core'
+    exclude group: 'androidx.recyclerview', module: 'recyclerview'
+}
+
+configurations {
+    shadowhookAar { transitive = false }
+}
+
+dependencies {
+    implementation project(':TMessagesProj')
+    implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
+    implementation 'androidx.core:core:1.16.0'
+    if (!rootProject.ext.inuPluginless) {
+        implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
+        shadowhookAar 'com.bytedance.android:shadowhook:2.0.1'
+    }
+}
+
+android {
+    compileSdkVersion 36
+    buildToolsVersion '36.0.0'
+
+    defaultConfig.applicationId = "desu.inugram"
+
+
+    lintOptions {
+        disable 'MissingTranslation'
+        disable 'ExtraTranslation'
+        disable 'BlockedPrivateApi'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    androidResources {
+        noCompress += "pack"
+        localeFilters += ["zz"] + file('../TMessagesProj/src/main/res').listFiles()
+            .findAll { it.name.startsWith('values-') && new File(it, 'strings_inu.xml').exists() }
+            .collect { it.name - 'values-' }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('RELEASE_KEYSTORE_PATH') ?: "../TMessagesProj/config/release.keystore")
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias RELEASE_KEY_ALIAS
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+            signingConfig signingConfigs.release
+            applicationIdSuffix ".beta"
+            minifyEnabled false
+            shrinkResources false
+            multiDexEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../TMessagesProj/proguard-rules.pro'
+            ndk.debugSymbolLevel = 'FULL'
+        }
+
+        release {
+            debuggable false
+            jniDebuggable false
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            multiDexEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), '../TMessagesProj/proguard-rules.pro'
+            ndk.debugSymbolLevel = 'FULL'
+        }
+    }
+
+    sourceSets.debug {
+        manifest.srcFile '../TMessagesProj/config/debug/AndroidManifest_SDK23.xml'
+    }
+
+    sourceSets.release {
+        manifest.srcFile '../TMessagesProj/config/release/AndroidManifest_SDK23.xml'
+    }
+
+    defaultConfig.versionCode = rootProject.ext.verCode
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "app.apk"
+        }
+    }
+
+    defaultConfig {
+        buildConfigField "boolean", "INU_PLUGINLESS", rootProject.ext.inuPluginless.toString()
+        minSdkVersion 26
+        targetSdkVersion 36
+        versionName rootProject.ext.verName
+        ndkVersion "29.0.14206865"
+
+        ndk {
+            abiFilters "arm64-v8a"
+        }
+
+        if (!rootProject.ext.inuPluginless) externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_PLATFORM=android-26' // , '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                targets 'lsplant'
+                if (rootProject.ext.ccachePath) {
+                    arguments += ["-DCMAKE_C_COMPILER_LAUNCHER=${rootProject.ext.ccachePath}", "-DCMAKE_CXX_COMPILER_LAUNCHER=${rootProject.ext.ccachePath}"]
+                }
+            }
+        }
+    }
+
+    if (!rootProject.ext.inuPluginless) externalNativeBuild {
+        cmake {
+            path 'jni/CMakeLists.txt'
+            version '3.31.6'
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+    }
+    namespace 'org.telegram.messenger.regular'
+
+    lintOptions {
+        checkReleaseBuilds false
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+apply plugin: 'com.google.gms.google-services'
+
+if (rootProject.ext.inuPluginless) return
+
+def shadowhookJniLibsDir = file("$buildDir/shadowhookJniLibs")
+
+tasks.register('unpackShadowhook', Copy) {
+    from({ zipTree(configurations.shadowhookAar.singleFile) }) {
+        include 'jni/**/libshadowhook.so'
+        include 'jni/**/libshadowhook_nothing.so'
+        eachFile { it.path = it.path.replaceFirst('^jni/', '') }
+        includeEmptyDirs = false
+    }
+    into shadowhookJniLibsDir
+}
+
+android.sourceSets.main.jniLibs.srcDirs += shadowhookJniLibsDir
+tasks.matching { it.name ==~ /merge.*JniLibFolders/ }.configureEach {
+    dependsOn 'unpackShadowhook'
+}
+
+def rustModuleDir = file("$projectDir/native")
+def rustJniLibsDir = file("$buildDir/rustJniLibs")
+def userHome = System.getProperty('user.home')
+def cargoHome = System.getenv('CARGO_HOME') ?: "$userHome/.cargo"
+def cargoCandidates = [
+    System.getenv('CARGO'),
+    project.findProperty('cargo.bin'),
+    "$cargoHome/bin/cargo",
+    "$userHome/.cargo/bin/cargo",
+    "/etc/profiles/per-user/${System.getProperty('user.name')}/bin/cargo",
+    "$userHome/.nix-profile/bin/cargo",
+    "/run/current-system/sw/bin/cargo",
+    "/opt/homebrew/bin/cargo",
+    "/usr/local/bin/cargo",
+]
+def cargoFile = cargoCandidates.findAll { it }.collect { file(it) }.find { it.isFile() }
+def cargoExe = cargoFile?.absolutePath ?: 'cargo'
+def cargoPathDirs = [cargoFile?.parentFile?.absolutePath, "$cargoHome/bin", "$userHome/.cargo/bin"].findAll { it }
+
+def inuNativeProfiles = [debug: 'profiling', release: 'release']
+inuNativeProfiles.each { buildType, cargoProfile ->
+    def taskName = "buildInuNative${buildType.capitalize()}"
+    def outputDir = new File(rustJniLibsDir, buildType)
+    def stockJniTask = "copy${buildType.capitalize()}JniLibsProjectOnly"
+    def stockLib = project(':TMessagesProj').file("build/intermediates/library_jni/$buildType/$stockJniTask/jni/arm64-v8a/libtmessages.49.so")
+    def sqliteLinkDir = file("$buildDir/inuSqliteLink/$buildType")
+    tasks.register(taskName, Exec) {
+        dependsOn ":TMessagesProj:$stockJniTask"
+        workingDir rustModuleDir
+        // libsqlite3-sys always links `-lsqlite3`, so a linker script by that name points it at the stock lib
+        environment 'SQLITE3_LIB_DIR', sqliteLinkDir.absolutePath
+        environment 'SQLITE3_INCLUDE_DIR', project(':TMessagesProj').file('jni/sqlite').absolutePath
+        doFirst {
+            sqliteLinkDir.mkdirs()
+            new File(sqliteLinkDir, 'libsqlite3.so').text = "INPUT(${stockLib.absolutePath})\n"
+        }
+        environment 'ANDROID_NDK_HOME', android.ndkDirectory.absolutePath
+        environment 'PATH', (cargoPathDirs + [System.getenv('PATH') ?: '']).join(File.pathSeparator)
+        def prebuilt = file("${android.ndkDirectory}/toolchains/llvm/prebuilt")
+        def ndkHost = prebuilt.listFiles()?.find { it.isDirectory() }
+        def libclangCandidates = [
+            project.findProperty('libclang.path'),
+            ndkHost ? new File(ndkHost, 'lib').absolutePath : null,
+            ndkHost ? new File(ndkHost, 'lib64').absolutePath : null,
+            '/Library/Developer/CommandLineTools/usr/lib',
+            '/opt/homebrew/opt/llvm/lib', '/usr/local/opt/llvm/lib',
+            '/run/current-system/sw/lib', "${System.getProperty('user.home')}/.nix-profile/lib",
+            '/usr/lib/llvm/lib', '/usr/lib',
+        ]
+        def libclangDir = libclangCandidates.findAll { it }.find { dir ->
+            def d = file(dir)
+            d.isDirectory() && d.listFiles()?.any { it.name ==~ /libclang\.(dylib|so)(\..*)?/ }
+        }
+        if (libclangDir != null) environment 'LIBCLANG_PATH', libclangDir
+        commandLine cargoExe, 'ndk', '-t', 'arm64-v8a', '-o', outputDir.absolutePath, 'build', '--profile', cargoProfile
+    }
+
+    android.sourceSets[buildType].jniLibs.srcDirs += outputDir
+    tasks.matching { it.name ==~ /merge${buildType.capitalize()}.*JniLibFolders/ }.configureEach {
+        dependsOn taskName
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType('debug')) { variant ->
+        variant.packaging.jniLibs.keepDebugSymbols.add('**/libinu_native.so')
+    }
+}
+
+def inuTestJniLibsDir = file("$buildDir/inuTestJniLibs")
+tasks.register('prepareInuTestJniLibs', Sync) {
+    dependsOn 'buildInuNativeDebug', 'unpackShadowhook', 'mergeDebugNativeLibs'
+    from new File(rustJniLibsDir, 'debug')
+    from shadowhookJniLibsDir
+    from("$buildDir/intermediates/merged_native_libs/debug/mergeDebugNativeLibs/out/lib") {
+        include '**/liblsplant.so'
+    }
+    into inuTestJniLibsDir
+}

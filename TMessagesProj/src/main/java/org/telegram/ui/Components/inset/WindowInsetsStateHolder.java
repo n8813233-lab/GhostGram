@@ -1,0 +1,330 @@
+package org.telegram.ui.Components.inset;
+
+import android.view.View;
+
+import androidx.annotation.Nullable;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.AnimationNotificationsLocker;
+import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
+
+import me.vkryl.android.animator.FactorAnimator;
+import me.vkryl.android.animator.VariableFloat;
+import me.vkryl.android.animator.VariableRect;
+
+public class WindowInsetsStateHolder implements WindowInsetsProvider, WindowInsetsInAppController, WindowAnimatedInsetsProvider.Listener {
+    private final FactorAnimator insetsAnimator;
+    private final VariableFloat keyboardVisibility = new VariableFloat(0);
+    private final VariableRect insetsMaxRect = new VariableRect();
+    private final VariableRect insetsImeRect = new VariableRect();
+    private final AnimationNotificationsLocker locker = new AnimationNotificationsLocker();
+
+    private final KeyboardState keyboardState = new KeyboardState(this::onKeyboardStateChanged);
+    private final Runnable onUpdateListener;
+
+    public WindowInsetsStateHolder(Runnable onUpdateListener) {
+        this.onUpdateListener = onUpdateListener;
+        this.insetsAnimator = new FactorAnimator(0, new FactorAnimator.Target() {
+            @Override
+            public void onFactorChanged(int id, float factor, float fraction, FactorAnimator callee) {
+                insetsMaxRect.applyAnimation(factor);
+                insetsImeRect.applyAnimation(factor);
+                keyboardVisibility.applyAnimation(factor);
+                onUpdateListener.run();
+            }
+
+            @Override
+            public void onFactorChangeFinished(int id, float finalFactor, FactorAnimator callee) {
+                boolean changed = false;
+                if (getAnimatedImeBottomInset() == 0 && inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_ANIMATION_END || inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_KEYBOARD_OPEN) {
+                    inAppKeyboardState = IN_APP_IME_STATE_HIDDEN;
+                    changed = true;
+                }
+                if (finalFactor == 1f) {
+                    if (inAppKeyboardViewHeight != inAppKeyboardHeight) {
+                        inAppKeyboardViewHeight = inAppKeyboardHeight;
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    onUpdateListener.run();
+                }
+                checkAnimationsLocker();
+            }
+        }, AdjustPanLayoutHelper.keyboardInterpolator, AdjustPanLayoutHelper.keyboardDuration);
+    }
+
+    private boolean locked;
+
+    private void checkAnimationsLocker() {
+        final boolean animating = insetsAnimator.isAnimating();
+        if (!locked && animating) {
+            locked = true;
+            locker.lock();
+        }
+        if (locked && !animating) {
+            locked = false;
+            locker.unlock();
+        }
+    }
+
+    private void onKeyboardStateChanged(KeyboardState.State state) {
+        if (state == KeyboardState.State.STATE_FULLY_VISIBLE && (inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_ANIMATION_END || inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_KEYBOARD_OPEN)) {
+            inAppKeyboardState = IN_APP_IME_STATE_HIDDEN;
+        }
+
+        onUpdateListener.run();
+    }
+
+    private WindowInsetsCompat lastInsets;
+
+    public void setInsets(@Nullable WindowInsetsCompat insets) {
+        setInsets(insets, lastInsets != null);
+    }
+
+    @Nullable
+    protected WindowInsetsCompat filterInsets(@Nullable WindowInsetsCompat insets) {
+        return insets;
+    }
+
+    private void setInsets(@Nullable WindowInsetsCompat insets, boolean animated) {
+        insets = filterInsets(insets);
+        this.lastInsets = insets;
+
+        final int insetsType = WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout();
+        final Insets systemInsets = insets != null ? Insets.max(
+            insets.getInsets(insetsType),
+            insets.getInsetsIgnoringVisibility(insetsType)
+        ) : Insets.NONE;
+        final Insets imeInsets = insets != null ? insets.getInsets(WindowInsetsCompat.Type.ime()) : Insets.NONE;
+
+        final KeyboardState.State oldKeyboardState = keyboardState.getState();
+        final KeyboardState.State newKeyboardState = keyboardState.setKeyboardVisibility(imeInsets.bottom > 0, !animated, false);
+
+        if (inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_ANIMATION_END) {
+            inAppKeyboardHeight = 0;
+        }
+        if (inAppKeyboardState == IN_APP_IME_STATE_HIDE_AFTER_KEYBOARD_OPEN && imeInsets.bottom > 0) {
+            inAppKeyboardHeight = 0;
+        }
+
+        final Insets inAppInsets = Insets.of(0, 0, 0, inAppKeyboardHeight);
+        final Insets inputInsets = Insets.max(imeInsets, inAppInsets);
+        final Insets maxInsets = Insets.max(systemInsets, inputInsets);
+
+        inu_prevInputBottomInset = inu_lastInputBottomInset;
+        inu_lastInputBottomInset = inputInsets.bottom;
+        if (inputInsets.bottom > 0) {
+            inu_ignoreAnimatedIme = false;
+        }
+
+        if (animated) {
+            final boolean changed = keyboardVisibility.differs(inputInsets.bottom > 0 ? 1f : 0f)
+                || insetsMaxRect.differs(maxInsets.left, maxInsets.top, maxInsets.right, maxInsets.bottom)
+                || insetsImeRect.differs(inputInsets.left, inputInsets.top, inputInsets.right, inputInsets.bottom);
+
+            if (changed) {
+                insetsAnimator.cancel();
+                keyboardVisibility.finishAnimation(false);
+                insetsMaxRect.finishAnimation(false);
+                insetsImeRect.finishAnimation(false);
+
+                keyboardVisibility.setTo(inputInsets.bottom > 0 ? 1f : 0f);
+                insetsMaxRect.setTo(maxInsets.left, maxInsets.top, maxInsets.right, maxInsets.bottom);
+                insetsImeRect.setTo(inputInsets.left, inputInsets.top, inputInsets.right, inputInsets.bottom);
+
+                insetsAnimator.forceFactor(0);
+                insetsAnimator.animateTo(1);
+            } else {
+                if (oldKeyboardState != newKeyboardState) {
+                    onUpdateListener.run();
+                }
+            }
+        } else {
+            insetsAnimator.cancel();
+
+            keyboardVisibility.set(inputInsets.bottom > 0 ? 1 : 0);
+            insetsMaxRect.set(maxInsets.left, maxInsets.top, maxInsets.right, maxInsets.bottom);
+            insetsImeRect.set(inputInsets.left, inputInsets.top, inputInsets.right, inputInsets.bottom);
+            onUpdateListener.run();
+        }
+
+        checkAnimationsLocker();
+    }
+
+
+
+    @Override
+    public boolean inAppViewIsVisible() {
+        return inAppKeyboardState != IN_APP_IME_STATE_HIDDEN;
+    }
+
+    @Override
+    public int getInAppKeyboardRecommendedViewHeight() {
+        return inAppKeyboardViewHeight;
+    }
+
+
+    @Override
+    public int getCurrentNavigationBarInset() {
+        return lastInsets != null ?
+            lastInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom : 0;
+    }
+
+    @Override
+    public Insets getInsets(int type) {
+        return lastInsets != null ? lastInsets.getInsets(type) : Insets.NONE;
+    }
+
+    @Override
+    public float getAnimatedMaxBottomInset() {
+        if (inu_shouldUseAnimatedIme()) {
+            return Math.max(animatedImeInset, insetsMaxRect.getBottom());
+        }
+
+        return insetsMaxRect.getBottom();
+    }
+
+    @Override
+    public int getCurrentMaxBottomInset() {
+        if (inu_shouldUseAnimatedIme()) {
+            return Math.max(animatedImeInset, inu_getTargetMaxBottomInset());
+        }
+
+        return inu_getTargetMaxBottomInset();
+    }
+
+    // Where the bottom inset will settle once any running IME animation finishes, as opposed to
+    // getCurrentMaxBottomInset() which reports the in-flight value while one is running.
+    public int inu_getTargetMaxBottomInset() {
+        return Math.max(getInsets(WindowInsetsCompat.Type.ime() | WindowInsetsCompat.Type.systemBars()).bottom, inAppKeyboardHeight);
+    }
+
+    @Override
+    public float getAnimatedImeBottomInset() {
+        if (inu_shouldUseAnimatedIme()) {
+            return Math.max(animatedImeInset, insetsImeRect.getBottom());
+        }
+
+        return insetsImeRect.getBottom();
+    }
+
+    @Override
+    public float getAnimatedKeyboardVisibility() {
+        return keyboardVisibility.get();
+    }
+
+
+
+    private static final int IN_APP_IME_STATE_VISIBLE = 0;
+    private static final int IN_APP_IME_STATE_HIDDEN = 1;
+    private static final int IN_APP_IME_STATE_HIDE_AFTER_ANIMATION_END = 2; // wait when insets animate to zero
+    private static final int IN_APP_IME_STATE_HIDE_AFTER_KEYBOARD_OPEN = 3; // wait keyboard fully visible
+
+    private int inAppKeyboardState = IN_APP_IME_STATE_HIDDEN;
+    private int inAppKeyboardHeight;
+    private int inAppKeyboardViewHeight;
+
+    @Override
+    public void requestInAppKeyboardHeight(int inAppKeyboardHeight) {
+        if (this.inAppKeyboardHeight != inAppKeyboardHeight || inAppKeyboardState != IN_APP_IME_STATE_VISIBLE) {
+            AndroidUtilities.cancelRunOnUIThread(closeInAppKeyboard);
+
+            inAppKeyboardViewHeight = Math.max(this.inAppKeyboardHeight, inAppKeyboardHeight);
+
+            this.inAppKeyboardHeight = inAppKeyboardHeight;
+            this.inAppKeyboardState = IN_APP_IME_STATE_VISIBLE;
+
+            setInsets(lastInsets);
+        }
+    }
+
+    private final Runnable closeInAppKeyboard = () -> {
+        if (inAppKeyboardHeight != 0) {
+            resetInAppKeyboardHeight(false);
+        }
+    };
+
+    public int getInAppKeyboardHeight() {
+        return inAppKeyboardHeight;
+    }
+
+    @Override
+    public void resetInAppKeyboardHeight(boolean waitKeyboardOpen) {
+        if (inAppKeyboardHeight == 0) {
+            return;
+        }
+
+        AndroidUtilities.cancelRunOnUIThread(closeInAppKeyboard);
+
+        this.inAppKeyboardState = waitKeyboardOpen ?
+            IN_APP_IME_STATE_HIDE_AFTER_KEYBOARD_OPEN :
+            IN_APP_IME_STATE_HIDE_AFTER_ANIMATION_END;
+
+        setInsets(lastInsets);
+
+        if (waitKeyboardOpen) {
+            AndroidUtilities.runOnUIThread(closeInAppKeyboard, 1000);
+        }
+
+    }
+    
+    private @Nullable WindowAnimatedInsetsProvider animatedInsetsProvider;
+    private @Nullable View animatedInsetsProviderTarget;
+    private int animatedImeInset;
+
+    // animatedImeInset comes from the app-wide provider, so it also reports IME animations
+    // belonging to other holders (e.g. a fragment presented while the previous one's keyboard
+    // is still closing). Such a holder must not follow that animation: it never had the IME.
+    private boolean inu_ignoreAnimatedIme;
+    private int inu_lastInputBottomInset;
+    private int inu_prevInputBottomInset;
+
+    private boolean inu_shouldUseAnimatedIme() {
+        return animatedInsetsProvider != null && activeAnimations > 0 && !inu_ignoreAnimatedIme;
+    }
+
+    public void setupAnimatedInsetsProvider(WindowAnimatedInsetsProvider provider, View target) {
+        animatedInsetsProvider = provider;
+        animatedInsetsProviderTarget = target;
+        animatedInsetsProvider.subscribeToWindowInsetsAnimation(this);
+    }
+
+    @Override
+    public View getAnimatedInsetsTargetView() {
+        return animatedInsetsProviderTarget;
+    }
+
+    @Override
+    public void onAnimatedInsetsChanged(View view, WindowInsetsCompat insets) {
+        insets = filterInsets(insets);
+        animatedImeInset = insets != null ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0;
+        onUpdateListener.run();
+    }
+
+    private int activeAnimations;
+
+    @Override
+    public void onAnimatedInsetsStarted() {
+        if (activeAnimations == 0) {
+            inu_ignoreAnimatedIme = inu_lastInputBottomInset == 0 && inu_prevInputBottomInset == 0;
+        }
+        activeAnimations++;
+    }
+
+    @Override
+    public void onAnimatedInsetsFinished() {
+        if (animatedInsetsProviderTarget != null) {
+            animatedInsetsProviderTarget.postOnAnimation(() -> {
+                activeAnimations = Math.max(0, activeAnimations - 1);
+                if (activeAnimations == 0) {
+                    inu_ignoreAnimatedIme = false;
+                    setInsets(WindowAnimatedInsetsProvider.calculateWindowInsets(animatedInsetsProviderTarget), false);
+                }
+            });
+        }
+    }
+}

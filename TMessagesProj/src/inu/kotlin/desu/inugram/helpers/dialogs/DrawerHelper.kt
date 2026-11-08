@@ -20,7 +20,6 @@ import desu.inugram.helpers.plugins.ui.PluginIcons
 import desu.inugram.ui.settings.PluginsActivity
 // #endif
 import desu.inugram.helpers.dialogs.DrawerHelper.setupMainFragment
-import desu.inugram.helpers.update.UpdateHelper
 import desu.inugram.ui.drawer.DrawerAddCell
 import desu.inugram.ui.drawer.DrawerLayoutAdapter
 import desu.inugram.ui.drawer.DrawerProfileCell
@@ -351,7 +350,7 @@ object DrawerHelper {
         if (SharedConfig.isAppUpdateAvailable()) {
             val doc = SharedConfig.pendingAppUpdate.document
             val fileName = FileLoader.getAttachFileName(doc)
-            if (UpdateHelper.isPendingStart || FileLoader.getInstance(UserConfig.selectedAccount).isLoadingFile(fileName)) {
+            if (FileLoader.getInstance(UserConfig.selectedAccount).isLoadingFile(fileName)) {
                 type = MenuDrawable.TYPE_UDPATE_DOWNLOADING
                 downloadProgress = ImageLoader.getInstance().getFileProgress(fileName) ?: 0f
             } else {

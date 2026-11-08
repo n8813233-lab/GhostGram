@@ -62,29 +62,7 @@ class AboutActivity : SettingsPageActivity(), NotificationCenter.NotificationCen
                 "teidesu/inugram",
             )
         )
-        items.add(
-            UItem.asButton(
-                BUTTON_CHANNEL_LINK,
-                LocaleController.getString(R.string.InuAboutChannel),
-                "@" + UpdateHelper.USERNAME,
-            )
-        )
         items.add(UItem.asShadow(null))
-
-        items.add(UItem.asHeader(LocaleController.getString(R.string.InuUpdates)))
-        items.add(
-            UItem.asCheck(
-                TOGGLE_UPDATES_ENABLED,
-                LocaleController.getString(R.string.InuUpdatesEnabled),
-            ).setChecked(InuConfig.UPDATES_ENABLED.value)
-        )
-        items.add(
-            UItem.asButton(
-                BUTTON_CHECK_NOW,
-                LocaleController.getString(R.string.InuUpdateCheckNow),
-            )
-        )
-        items.add(UItem.asShadow(updateInfoLabel()))
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.InuLogs)))
         items.add(
@@ -135,29 +113,10 @@ class AboutActivity : SettingsPageActivity(), NotificationCenter.NotificationCen
 
     override fun getListExtraBottomPadding(): Int = if (SharedConfig.isAppUpdateAvailable()) dp(44f) else 0
 
-    private var isChecking = false
-    private fun lastCheckLabel(): String {
-        val ms = InuConfig.UPDATE_LAST_CHECK_MS.value
-        val text = when {
-            isChecking -> LocaleController.getString(R.string.Checking)
-            ms == 0L -> LocaleController.getString(R.string.MessageScheduledRepeatOptionNever)
-            else -> LocaleController.formatDateTime(ms / 1000, true)
-        }
-        return LocaleController.formatString(R.string.InuUpdateLastChecked, text)
-    }
-
     override fun onClick(item: UItem, view: View, position: Int, x: Float, y: Float) {
         val ctx = context ?: return
         when (item.id) {
             BUTTON_GITHUB -> Browser.openUrl(ctx, "https://github.com/teidesu/inugram")
-            BUTTON_CHANNEL_LINK -> Browser.openUrl(ctx, "https://t.me/" + UpdateHelper.USERNAME)
-            TOGGLE_UPDATES_ENABLED -> {
-                val new = InuConfig.UPDATES_ENABLED.toggle()
-                (view as? TextCheckCell)?.isChecked = new
-                if (!new) UpdateHelper.clearPending()
-            }
-
-            BUTTON_CHECK_NOW -> runManualCheck()
             TOGGLE_LOGS_ENABLED -> {
                 val new = !LogsHelper.isEnabled()
                 LogsHelper.setEnabled(new)
@@ -177,146 +136,6 @@ class AboutActivity : SettingsPageActivity(), NotificationCenter.NotificationCen
                 ).show()
             }
         }
-    }
-
-    private fun runManualCheck() {
-        isChecking = true
-        listView.adapter.update(true)
-        UpdateHelper.check { result ->
-            AndroidUtilities.runOnUIThread {
-                isChecking = false
-                listView?.adapter?.update(true)
-                val msg: CharSequence = when (result) {
-                    UpdateHelper.CheckResult.InFlight ->
-                        LocaleController.getString(R.string.Checking)
-
-                    UpdateHelper.CheckResult.UpToDate ->
-                        LocaleController.getString(R.string.InuUpdateUpToDate)
-
-                    is UpdateHelper.CheckResult.Updated -> {
-                        val ctx = context ?: return@runOnUIThread
-                        ApplicationLoader.applicationLoaderInstance?.showUpdateAppPopup(
-                            ctx, result.update, UserConfig.selectedAccount,
-                        )
-                        return@runOnUIThread
-                    }
-
-                    is UpdateHelper.CheckResult.Error ->
-                        LocaleController.formatString(R.string.InuUpdateError, result.message)
-                }
-                BulletinFactory.of(this).createSimpleBulletin(R.raw.chats_infotip, msg).show()
-            }
-        }
-    }
-
-    private fun updateInfoLabel(): CharSequence {
-        if (BuildConfig.INU_BUILD_TYPE == "debug") return lastCheckLabel()
-        val build = LocaleController.getString(
-            if (BuildConfig.INU_PLUGINLESS) R.string.InuUpdateBuildPluginlessInfo
-            else R.string.InuUpdateBuildFullInfo
-        )
-        return TextUtils.concat(
-            AndroidUtilities.replaceArrows(
-                AndroidUtilities.replaceSingleTag(build) { confirmVariantSwitch() },
-                true,
-            ),
-            "\n",
-            lastCheckLabel(),
-        )
-    }
-
-    private var variantSwitch: UpdateHelper.VariantSwitch? = null
-    private var isPreparingVariantSwitch = false
-    private var variantSwitchDownloadDialog: AlertDialog? = null
-
-    private fun confirmVariantSwitch() {
-        val ctx = context ?: return
-        AlertDialog.Builder(ctx)
-            .setTitle(
-                LocaleController.getString(
-                    if (BuildConfig.INU_PLUGINLESS) R.string.InuSwitchConfirmFull
-                    else R.string.InuSwitchConfirmPluginless
-                )
-            )
-            .setPositiveButton(LocaleController.getString(R.string.OK)) { _, _ -> prepareVariantSwitch() }
-            .setNegativeButton(LocaleController.getString(R.string.Cancel), null)
-            .show()
-    }
-
-    private fun prepareVariantSwitch() {
-        val ctx = context ?: return
-        isPreparingVariantSwitch = true
-        variantSwitchDownloadDialog = AlertDialog(ctx, AlertDialog.ALERT_TYPE_LOADING).apply {
-            setMessage(LocaleController.getString(R.string.InuSwitchPreparing))
-            setCanceledOnTouchOutside(false)
-            setCancelable(true)
-            setOnCancelListener {
-                isPreparingVariantSwitch = false
-                variantSwitch?.let {
-                    UpdateHelper.cancelVariantSwitchDownload(UserConfig.selectedAccount, it)
-                }
-                variantSwitch = null
-                variantSwitchDownloadDialog = null
-            }
-            show()
-        }
-        UpdateHelper.prepareVariantSwitch { result ->
-            AndroidUtilities.runOnUIThread {
-                if (!isPreparingVariantSwitch) return@runOnUIThread
-                isPreparingVariantSwitch = false
-                when (result) {
-                    UpdateHelper.VariantSwitchResult.InFlight -> finishVariantSwitchPreparation(
-                        LocaleController.getString(R.string.Checking)
-                    )
-                    UpdateHelper.VariantSwitchResult.Unavailable -> finishVariantSwitchPreparation(
-                        LocaleController.getString(R.string.InuSwitchUnavailable)
-                    )
-                    is UpdateHelper.VariantSwitchResult.Error -> finishVariantSwitchPreparation(
-                        LocaleController.formatString(R.string.InuUpdateError, result.message)
-                    )
-                    is UpdateHelper.VariantSwitchResult.Ready -> startVariantSwitchDownload(result.variantSwitch)
-                }
-            }
-        }
-    }
-
-    private fun startVariantSwitchDownload(value: UpdateHelper.VariantSwitch) {
-        val account = UserConfig.selectedAccount
-        UpdateHelper.cancelDownload(account)
-        UpdateHelper.clearPending()
-        val file = FileLoader.getInstance(account).getPathToAttach(value.document, true)
-        if (file?.exists() == true) {
-            variantSwitchDownloadDialog?.dismiss()
-            variantSwitchDownloadDialog = null
-            installVariantSwitch(value)
-            return
-        }
-        variantSwitch = value
-        variantSwitchDownloadDialog?.setMessage(
-            LocaleController.getString(
-                if (BuildConfig.INU_PLUGINLESS) R.string.InuSwitchDownloadingFull
-                else R.string.InuSwitchDownloadingPluginless
-            )
-        )
-        UpdateHelper.startVariantSwitchDownload(account, value)
-    }
-
-    private fun finishVariantSwitchPreparation(message: CharSequence) {
-        variantSwitchDownloadDialog?.dismiss()
-        variantSwitchDownloadDialog = null
-        showVariantSwitchMessage(message)
-    }
-
-    private fun installVariantSwitch(value: UpdateHelper.VariantSwitch) {
-        variantSwitch = null
-        val activity = parentActivity ?: return
-        val loader = ApplicationLoader.applicationLoaderInstance ?: return
-        if (loader.checkApkInstallPermissions(activity)) loader.openApkInstall(activity, value.document)
-    }
-
-    private fun showVariantSwitchMessage(message: CharSequence) {
-        if (context == null) return
-        BulletinFactory.of(this).createSimpleBulletin(R.raw.chats_infotip, message).show()
     }
 
     override fun onFragmentCreate(): Boolean {
@@ -339,43 +158,11 @@ class AboutActivity : SettingsPageActivity(), NotificationCenter.NotificationCen
         acct.removeObserver(this, NotificationCenter.fileLoadProgressChanged)
         acct.removeObserver(this, NotificationCenter.fileLoaded)
         acct.removeObserver(this, NotificationCenter.fileLoadFailed)
-        variantSwitch?.let { UpdateHelper.cancelVariantSwitchDownload(UserConfig.selectedAccount, it) }
-        variantSwitch = null
-        isPreparingVariantSwitch = false
-        variantSwitchDownloadDialog?.dismiss()
-        variantSwitchDownloadDialog = null
         super.onFragmentDestroy()
     }
 
     override fun didReceivedNotification(id: Int, account: Int, vararg args: Any?) {
         val acct = UserConfig.selectedAccount
-        val switching = variantSwitch
-        if (switching != null) {
-            val name = args.getOrNull(0) as? String
-            if (name == FileLoader.getAttachFileName(switching.document)) {
-                when (id) {
-                    NotificationCenter.fileLoadProgressChanged -> {
-                        val loaded = args.getOrNull(1) as? Long ?: return
-                        val total = args.getOrNull(2) as? Long ?: return
-                        if (total > 0) variantSwitchDownloadDialog?.setProgress((loaded * 100 / total).toInt())
-                        return
-                    }
-                    NotificationCenter.fileLoaded -> {
-                        variantSwitchDownloadDialog?.dismiss()
-                        variantSwitchDownloadDialog = null
-                        installVariantSwitch(switching)
-                        return
-                    }
-                    NotificationCenter.fileLoadFailed -> {
-                        variantSwitchDownloadDialog?.dismiss()
-                        variantSwitchDownloadDialog = null
-                        variantSwitch = null
-                        showVariantSwitchMessage(LocaleController.getString(R.string.InuSwitchDownloadFailed))
-                        return
-                    }
-                }
-            }
-        }
         val ul = updateLayout ?: return
         when (id) {
             NotificationCenter.appUpdateAvailable -> {
@@ -668,9 +455,6 @@ class AboutActivity : SettingsPageActivity(), NotificationCenter.NotificationCen
 
     companion object {
         private val BUTTON_GITHUB = InuUtils.generateId()
-        private val BUTTON_CHANNEL_LINK = InuUtils.generateId()
-        private val TOGGLE_UPDATES_ENABLED = InuUtils.generateId()
-        private val BUTTON_CHECK_NOW = InuUtils.generateId()
         private val TOGGLE_LOGS_ENABLED = InuUtils.generateId()
         private val TOGGLE_EXTRA_DEBUG_LOGS = InuUtils.generateId()
         private val BUTTON_COPY_SYSINFO = InuUtils.generateId()

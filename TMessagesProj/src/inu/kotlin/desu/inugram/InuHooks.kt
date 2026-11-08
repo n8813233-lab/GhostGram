@@ -21,8 +21,6 @@ import desu.inugram.ui.settings.PluginReposActivity
 import desu.inugram.helpers.security.PasscodeHelper
 import desu.inugram.helpers.theme.MonetHelper
 import desu.inugram.helpers.theme.NonIslandHelper
-import desu.inugram.helpers.update.ApkInstaller
-import desu.inugram.helpers.update.UpdateHelper
 import org.telegram.messenger.AndroidUtilities
 import org.telegram.messenger.LocaleController.getString
 import org.telegram.messenger.MessageObject
@@ -66,8 +64,6 @@ object InuHooks {
             MonetHelper.registerOverlayChangeReceiver(context)
             MonetHelper.registerThemeReloadReceiver(context)
         }
-        UpdateHelper.clearPendingIfInstalled()
-        ApkInstaller.dismissInstalledNotification()
         CloudSettingsHelper.attachAutoSyncListener()
         ProxyVpnHelper.init(context)
         // #if PLUGINS
@@ -86,21 +82,6 @@ object InuHooks {
     @JvmStatic
     fun onMessagesControllerCreated(messagesController: MessagesController, account: Int) {
         MapsHelper.syncMapProvider(messagesController)
-        AndroidUtilities.runOnUIThread {
-            NotificationCenter.getInstance(account).addObserver(
-                NotificationCenter.NotificationCenterDelegate { id, acc, args ->
-                    if (id != NotificationCenter.didReceiveNewMessages) return@NotificationCenterDelegate
-                    @Suppress("UNCHECKED_CAST")
-                    val messages = args[1] as? ArrayList<MessageObject> ?: return@NotificationCenterDelegate
-                    for (msg in messages) onNewMessage(msg, acc)
-                },
-                NotificationCenter.didReceiveNewMessages,
-            )
-        }
-    }
-
-    fun onNewMessage(message: MessageObject, account: Int) {
-        if (message.messageOwner != null) UpdateHelper.onNewMessage(message.messageOwner, account)
     }
 
     @JvmStatic

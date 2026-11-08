@@ -926,21 +926,6 @@ object InuConfig {
     @JvmField
     val MAP_PREVIEW_PROVIDER = MapPreviewProviderItem()
 
-    class UpdatesEnabledItem : BoolItem("updates_enabled", true, exportable = false) {
-        override fun read(prefs: SharedPreferences): Boolean {
-            // compat, remove after a few months
-            if (!prefs.contains(key) && prefs.contains("update_channel")) {
-                val value = prefs.getInt("update_channel", 1) != 0
-                prefs.edit { putBoolean(key, value) }
-                return value
-            }
-            return prefs.getBoolean(key, default)
-        }
-    }
-
-    @JvmField
-    val UPDATES_ENABLED = UpdatesEnabledItem()
-
     @JvmField
     val EXTRA_DEBUG_LOGS = BoolItem("extra_debug_logs", false, exportable = false)
 
@@ -950,9 +935,6 @@ object InuConfig {
 
     @JvmField
     val MINIMIZE_STICKERS_CREATOR = BoolItem("minimize_stickers_creator", true, exportable = false)
-
-    @JvmField
-    val UPDATE_LAST_CHECK_MS = LongItem("update_last_check_ms", 0L, exportable = false)
 
     @JvmField
     val CLOUD_SYNC_ACCOUNT_ID = LongItem("cloud_sync_account_id", 0L, exportable = false)

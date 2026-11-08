@@ -621,12 +621,6 @@
 
         <receiver android:name=".NotificationDismissReceiver" android:exported="false"/>
 
-        <receiver android:name="desu.inugram.helpers.update.ApkInstaller$UpdateReceiver" android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-            </intent-filter>
-        </receiver>
-
         <receiver android:name=".voip.VoIPActionsReceiver" android:exported="false"/>
 
         <receiver android:name=".ShortcutResultReceiver" android:exported="false"/>

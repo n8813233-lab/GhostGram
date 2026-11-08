@@ -40,6 +40,21 @@ public class PremiumAppIconsPreviewView extends FrameLayout implements PagerHead
                 break;
             }
         }
+        // GhostGram: all launcher icons are free (no premium-flagged icons remain),
+        // so fall back to the first icons overall for the preview instead of
+        // tripping the "at least 3 premium icons" invariant below.
+        if (icons.size() < 3) {
+            icons.clear();
+            for (LauncherIconController.LauncherIcon icon : LauncherIconController.LauncherIcon.values()) {
+                if (icon == LauncherIconController.LauncherIcon.DISGUISE) {
+                    continue;
+                }
+                icons.add(icon);
+                if (icons.size() == 3) {
+                    break;
+                }
+            }
+        }
 
         if (icons.size() < 3) {
             FileLog.e(new IllegalArgumentException("There should be at least 3 premium icons!"));

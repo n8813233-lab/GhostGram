@@ -804,7 +804,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         }
 
         if (!desu.inugram.helpers.security.ParanoiaHelper.shouldHideSettings()) {
-            items.add(SettingCell.Factory.of(99, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.icon_settings_inu, getString(R.string.InuSettings), getString(R.string.InuSettingsInfo)));
+            items.add(SettingCell.Factory.of(99, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.icon_settings_ghost, getString(R.string.InuSettings), getString(R.string.InuSettingsInfo)));
             items.add(UItem.asShadow(null));
         }
 

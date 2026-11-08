@@ -246,8 +246,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): the ported Cherrygram Java code
+        // uses switch expressions/rules and pattern-matching instanceof (Java
+        // 14+/16+ syntax). Language features only, no new APIs - same fix the
+        // old base applied (its CI run 10).
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {

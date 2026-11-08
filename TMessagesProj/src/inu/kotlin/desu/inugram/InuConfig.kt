@@ -963,6 +963,17 @@ object InuConfig {
     @JvmField
     val TRANSLATION_PROVIDER = StringItem("translation_provider", "", exportable = false)
 
+    // GhostGram built-in translation provider (pluginless builds have no plugin
+    // engine, so the provider slot is filled by BuiltinTranslateEngine instead).
+    @JvmField
+    val BUILTIN_TRANSLATION = BoolItem("builtin_translation", true)
+
+    @JvmField
+    val TRANSLATE_ENDPOINT = StringItem("translate_endpoint", "", exportable = false)
+
+    @JvmField
+    val TRANSLATE_API_KEY = StringItem("translate_api_key", "", exportable = false)
+
     @JvmField
     val ACCOUNT_ORDER = StringItem("account_order", "", exportable = false)
 

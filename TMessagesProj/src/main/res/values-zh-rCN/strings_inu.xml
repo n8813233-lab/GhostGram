@@ -206,6 +206,13 @@
     <string name="InuTranslationProviderFromPlugin">来自 %1$s</string>
     <string name="InuTranslationProviderUnavailable">不可用</string>
     <string name="InuTranslationProviderInfo">你可以将其他翻译服务安装为**插件 >**</string>
+    <string name="InuCGFeatures">GhostGram 功能</string>
+    <string name="InuBuiltinTranslator">内置翻译（谷歌翻译）</string>
+    <string name="InuBuiltinTranslatorInfo">直接用谷歌翻译翻译聊天、消息与即时预览页面——不需要会员、不需要插件。默认端点是免费的非官方谷歌翻译端点：可能限流或随时失效。下方可自设端点与可选 API Key（用于官方 Google Cloud 翻译 API）。</string>
+    <string name="InuTranslateEndpoint">翻译端点</string>
+    <string name="InuTranslateEndpointDefault">默认（谷歌免费端点）</string>
+    <string name="InuTranslateApiKey">API Key（可选）</string>
+    <string name="InuTranslateApiKeyNone">未设置</string>
     <string name="InuHideReactionEntry">隐藏回应出现动画</string>
     <string name="InuHideReactionEntryInfo">…在回应被添加到消息时</string>
     <string name="InuMutualContact">互相联系人</string>

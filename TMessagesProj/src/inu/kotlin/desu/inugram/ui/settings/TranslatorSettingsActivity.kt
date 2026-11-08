@@ -9,6 +9,7 @@ import desu.inugram.helpers.plugins.telegram.PluginTranslation
 // #endif
 import desu.inugram.helpers.translate.TranslationProviderHelper
 import desu.inugram.ui.settings.TranslationTargetActivity
+import desu.inugram.ui.showInputDialog
 import org.telegram.messenger.AndroidUtilities
 import org.telegram.messenger.LocaleController
 import org.telegram.messenger.MessagesController
@@ -52,6 +53,28 @@ class TranslatorSettingsActivity : SettingsPageActivity() {
                 )
             )
         )
+        // #else
+        items.add(
+            UItem.asCheck(
+                TOGGLE_BUILTIN_TRANSLATION,
+                LocaleController.getString(R.string.InuBuiltinTranslator),
+            ).setChecked(InuConfig.BUILTIN_TRANSLATION.value)
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_TRANSLATE_ENDPOINT,
+                LocaleController.getString(R.string.InuTranslateEndpoint),
+                endpointLabel(),
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_TRANSLATE_API_KEY,
+                LocaleController.getString(R.string.InuTranslateApiKey),
+                apiKeyLabel(),
+            )
+        )
+        items.add(UItem.asShadow(LocaleController.getString(R.string.InuBuiltinTranslatorInfo)))
         // #endif
         items.add(
             UItem.asCheck(
@@ -167,6 +190,18 @@ class TranslatorSettingsActivity : SettingsPageActivity() {
 
             // #if PLUGINS
             BUTTON_PROVIDER -> showProviderDialog()
+            // #else
+            TOGGLE_BUILTIN_TRANSLATION -> {
+                val new = InuConfig.BUILTIN_TRANSLATION.toggle()
+                (view as? TextCheckCell)?.isChecked = new
+                listView?.adapter?.update(true)
+                NotificationCenter.getInstance(currentAccount)
+                    .postNotificationName(NotificationCenter.updateSearchSettings)
+            }
+
+            BUTTON_TRANSLATE_ENDPOINT -> showEndpointDialog()
+
+            BUTTON_TRANSLATE_API_KEY -> showApiKeyDialog()
             // #endif
 
             BUTTON_TARGET_LANG -> presentFragment(TranslationTargetActivity())
@@ -199,6 +234,46 @@ class TranslatorSettingsActivity : SettingsPageActivity() {
             ?: LocaleController.getString(R.string.InuTranslationProviderUnavailable)
     }
 
+    // #else
+    private fun showEndpointDialog() {
+        showInputDialog(
+            this,
+            LocaleController.getString(R.string.InuTranslateEndpoint),
+            LocaleController.getString(R.string.InuTranslateEndpointDefault),
+            InuConfig.TRANSLATE_ENDPOINT.value,
+        ) { value ->
+            InuConfig.TRANSLATE_ENDPOINT.value = value.trim()
+            listView?.adapter?.update(true)
+            true
+        }
+    }
+
+    private fun showApiKeyDialog() {
+        showInputDialog(
+            this,
+            LocaleController.getString(R.string.InuTranslateApiKey),
+            LocaleController.getString(R.string.InuTranslateApiKeyNone),
+            InuConfig.TRANSLATE_API_KEY.value,
+        ) { value ->
+            InuConfig.TRANSLATE_API_KEY.value = value.trim()
+            listView?.adapter?.update(true)
+            true
+        }
+    }
+
+    private fun endpointLabel(): String {
+        val endpoint = InuConfig.TRANSLATE_ENDPOINT.value
+        return endpoint.ifEmpty { LocaleController.getString(R.string.InuTranslateEndpointDefault) }
+    }
+
+    private fun apiKeyLabel(): String {
+        return if (InuConfig.TRANSLATE_API_KEY.value.isEmpty()) {
+            LocaleController.getString(R.string.InuTranslateApiKeyNone)
+        } else {
+            "••••••••"
+        }
+    }
+
     // #endif
 
     private fun targetLangLabel(): String {
@@ -228,6 +303,9 @@ class TranslatorSettingsActivity : SettingsPageActivity() {
         private val BUTTON_DO_NOT_TRANSLATE = InuUtils.generateId()
         private val BUTTON_TARGET_LANG = InuUtils.generateId()
         private val BUTTON_PROVIDER = InuUtils.generateId()
+        private val TOGGLE_BUILTIN_TRANSLATION = InuUtils.generateId()
+        private val BUTTON_TRANSLATE_ENDPOINT = InuUtils.generateId()
+        private val BUTTON_TRANSLATE_API_KEY = InuUtils.generateId()
 
         @JvmField val PAGE = SearchRegistry.Page(
             slug = "translator",
@@ -237,6 +315,10 @@ class TranslatorSettingsActivity : SettingsPageActivity() {
             entries = listOf(
                 // #if PLUGINS
                 SearchRegistry.Entry("translation-provider", R.string.InuTranslationProvider, BUTTON_PROVIDER),
+                // #else
+                SearchRegistry.Entry("builtin-translation", R.string.InuBuiltinTranslator, TOGGLE_BUILTIN_TRANSLATION),
+                SearchRegistry.Entry("translation-endpoint", R.string.InuTranslateEndpoint, BUTTON_TRANSLATE_ENDPOINT),
+                SearchRegistry.Entry("translation-api-key", R.string.InuTranslateApiKey, BUTTON_TRANSLATE_API_KEY),
                 // #endif
                 SearchRegistry.Entry("show-translate-button", R.string.ShowTranslateButton, TOGGLE_SHOW_TRANSLATE_BUTTON),
                 SearchRegistry.Entry("show-translate-chat-button", R.string.ShowTranslateChatButton, TOGGLE_SHOW_TRANSLATE_CHAT_BUTTON),

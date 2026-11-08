@@ -80,7 +80,7 @@ object TranslationProviderHelper {
         // #if PLUGINS
         InuConfig.PLUGINS_ENABLED.value && (provider ?: InuConfig.TRANSLATION_PROVIDER.value).isNotEmpty()
         // #else
-        false
+        InuConfig.BUILTIN_TRANSLATION.value
         // #endif
 
     /** Premium's chat translation, which a provider of the user's own does not need */
@@ -168,7 +168,92 @@ object TranslationProviderHelper {
         }
         return true
         // #else
-        return false
+        if (!InuConfig.BUILTIN_TRANSLATION.value) {
+            if (request !is RichTranslationRequest) return false
+            Utilities.stageQueue.postRunnable {
+                val error = createError("TRANSLATION_PROVIDER_FAILED")
+                onComplete?.run(null, error)
+                onCompleteTimestamp?.run(null, error, 0)
+            }
+            return true
+        }
+        val fail = {
+            Utilities.stageQueue.postRunnable {
+                val error = createError("TRANSLATION_PROVIDER_FAILED")
+                onComplete?.run(null, error)
+                onCompleteTimestamp?.run(null, error, 0)
+            }
+        }
+        val texts: List<TLRPC.TL_textWithEntities>
+        val from: List<String?>
+        val toLanguage: String
+        val createResponse: (List<TLRPC.TL_textWithEntities>) -> TLObject?
+        when (request) {
+            is TLRPC.TL_messages_translateText -> {
+                if (request.text.isEmpty()) {
+                    Utilities.stageQueue.postRunnable {
+                        val error = createError("TRANSLATION_PROVIDER_NEEDS_TEXT")
+                        onComplete?.run(null, error)
+                        onCompleteTimestamp?.run(null, error, 0)
+                    }
+                    return true
+                }
+                texts = request.text
+                from = request.text.map { null }
+                toLanguage = request.to_lang
+                createResponse = { TLRPC.TL_messages_translateResult().apply { result = ArrayList(it) } }
+            }
+            is RichTranslationRequest -> {
+                val translator = RichMessageTranslator.create(account, request.messages, request.languages)
+                if (translator == null) {
+                    fail()
+                    return true
+                }
+                if (translator.texts.isEmpty()) {
+                    Utilities.stageQueue.postRunnable {
+                        val response = TLRPC.TL_messages_translatedRichMessage().apply { result = translator.messages }
+                        onComplete?.run(response, null)
+                        onCompleteTimestamp?.run(response, null, 0)
+                    }
+                    return true
+                }
+                texts = translator.texts
+                from = translator.sourceLanguages
+                toLanguage = request.toLanguage
+                createResponse = { translated ->
+                    translator.apply(translated)?.let { messages ->
+                        TLRPC.TL_messages_translatedRichMessage().apply { result = messages }
+                    }
+                }
+            }
+            else -> return false
+        }
+        val requestKey = (account.toLong() shl 32) or (token.toLong() and 0xffffffffL)
+        BuiltinTranslateEngine.begin(requestKey)
+        BuiltinTranslateEngine.translate(texts.map { it.text.orEmpty() }, from, toLanguage) { translatedTexts ->
+            Utilities.stageQueue.postRunnable {
+                if (!BuiltinTranslateEngine.finish(requestKey)) return@postRunnable
+                if (translatedTexts == null || translatedTexts.size != texts.size) {
+                    val error = createError("TRANSLATION_PROVIDER_FAILED")
+                    onComplete?.run(null, error)
+                    onCompleteTimestamp?.run(null, error, 0)
+                    return@postRunnable
+                }
+                val translated = texts.indices.map { i ->
+                    TLRPC.TL_textWithEntities().apply { text = translatedTexts[i] }
+                }
+                val response = createResponse(translated)
+                if (response != null) {
+                    onComplete?.run(response, null)
+                    onCompleteTimestamp?.run(response, null, 0)
+                } else {
+                    val error = createError("TRANSLATION_PROVIDER_FAILED")
+                    onComplete?.run(null, error)
+                    onCompleteTimestamp?.run(null, error, 0)
+                }
+            }
+        }
+        return true
         // #endif
     }
 
@@ -180,7 +265,7 @@ object TranslationProviderHelper {
         EngineDispatch.scheduler.postRunnable { PluginTranslation.cancel(entry.dispatchId) }
         return true
         // #else
-        return false
+        return BuiltinTranslateEngine.cancel((account.toLong() shl 32) or (token.toLong() and 0xffffffffL))
         // #endif
     }
 

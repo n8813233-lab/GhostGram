@@ -290,6 +290,13 @@
     <string name="InuTranslationProviderFromPlugin">from %1$s</string>
     <string name="InuTranslationProviderUnavailable">Unavailable</string>
     <string name="InuTranslationProviderInfo">You can install additional translation services as **Plugins >**</string>
+    <string name="InuCGFeatures">GhostGram features</string>
+    <string name="InuBuiltinTranslator">Built-in translator (Google Translate)</string>
+    <string name="InuBuiltinTranslatorInfo">Translates chats, messages and Instant View pages with Google Translate directly — no Premium and no plugin needed. The default endpoint is the free, unofficial Google Translate endpoint: it may rate-limit or stop working at any time. You can set a custom endpoint and an optional API key (for the official Google Cloud Translation API) below.</string>
+    <string name="InuTranslateEndpoint">Translation endpoint</string>
+    <string name="InuTranslateEndpointDefault">Default (free Google endpoint)</string>
+    <string name="InuTranslateApiKey">API key (optional)</string>
+    <string name="InuTranslateApiKeyNone">Not set</string>
     <string name="InuHideReactionEntry">Hide reaction appear animation</string>
     <string name="InuHideReactionEntryInfo">…when a reaction is added to a message</string>
     <string name="InuMutualContact">Mutual contact</string>

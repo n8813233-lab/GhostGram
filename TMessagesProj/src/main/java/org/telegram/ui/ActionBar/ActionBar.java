@@ -19,6 +19,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,6 +29,8 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
@@ -63,6 +66,7 @@ import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider;
+import uz.unnarsx.cherrygram.core.configs.CherrygramAppearanceConfig;
 import uz.unnarsx.cherrygram.core.configs.CherrygramChatsConfig;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EllipsizeSpanAnimator;
@@ -75,9 +79,10 @@ import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.util.ArrayList;
 
+import me.vkryl.android.animator.FactorAnimator;
 import me.vkryl.android.animator.ReplaceAnimator;
 
-public class ActionBar extends FrameLayout implements Theme.Colorable {
+public class ActionBar extends FrameLayout implements Theme.Colorable, FactorAnimator.Target {
 
     public static class ActionBarMenuOnItemClick {
         public void onItemClick(int id) {
@@ -631,6 +636,10 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         }
         menu = new ActionBarMenu(getContext(), this);
         addView(menu, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.RIGHT));
+        if (glassMode) {
+            menu.setTranslationX(-dp(10));
+            menu.setGlassMode(true);
+        }
         return menu;
     }
 
@@ -701,9 +710,13 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                 }
             }
         };
+        actionMode.setTranslationX(glassMode ? -dp(10) : 0);
+        actionMode.setGlassMode(glassMode);
         actionMode.isActionMode = true;
         actionMode.setClickable(true);
-        actionMode.setBackgroundColor(getThemedColor(Theme.key_actionBarActionModeDefault));
+        if (!glassMode) {
+            actionMode.setBackgroundColor(getThemedColor(Theme.key_actionBarActionModeDefault));
+        }
         addView(actionMode, indexOfChild(backButtonImageView));
         actionMode.setPadding(0, occupyStatusBar ? AndroidUtilities.statusBarHeight : 0, 0, 0);
         FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) actionMode.getLayoutParams();
@@ -767,6 +780,9 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             return;
         }
         actionModeVisible = true;
+        if (iOSUnreadBadgeAvailable()) {
+            updateBackPillWidth(true);
+        }
         if (animated) {
             ArrayList<Animator> animators = new ArrayList<>();
             animators.add(ObjectAnimator.ofFloat(actionMode, View.ALPHA, 0.0f, 1.0f));
@@ -953,6 +969,9 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         }
         actionMode.hideAllPopupMenus();
         actionModeVisible = false;
+        if (iOSUnreadBadgeAvailable()) {
+            updateBackPillWidth(true);
+        }
         ArrayList<Animator> animators = new ArrayList<>();
         animators.add(ObjectAnimator.ofFloat(actionMode, View.ALPHA, 0.0f));
         if (actionModeHidingViews != null) {
@@ -1328,10 +1347,13 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
 
         int textLeft;
         if (backButtonImageView != null && backButtonImageView.getVisibility() != GONE) {
-            backButtonImageView.measure(MeasureSpec.makeMeasureSpec(dp(54), MeasureSpec.EXACTLY), actionBarHeightSpec);
-            textLeft = dp(AndroidUtilities.isTablet() ? 80 : 72);
+            measureBackButton(actionBarHeightSpec);
+            textLeft = glassMode ? dp(76) : dp(AndroidUtilities.isTablet() ? 80 : 72);
+            if (glassMode && backButtonImageView.getUnreadCount() != -1) {
+                updateBackPillWidth(true);
+            }
         } else {
-            textLeft = dp(AndroidUtilities.isTablet() ? 26 : 18);
+            textLeft = glassMode ? dp(24) : dp(AndroidUtilities.isTablet() ? 26 : 18);
         }
 
         if (menu != null && menu.getVisibility() != GONE) {
@@ -1369,7 +1391,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                 } else {
                     if (titleTextView[0] != null && titleTextView[0].getVisibility() != GONE && subtitleTextView != null && subtitleTextView.getVisibility() != GONE) {
                         if (titleTextView[i] != null) {
-                            titleTextView[i].setTextSize(AndroidUtilities.isTablet() ? 20 : 18);
+                            titleTextView[i].setTextSize(glassMode ? 17 : AndroidUtilities.isTablet() ? 20 : 18);
                         }
                         subtitleTextView.setTextSize(AndroidUtilities.isTablet() ? 16 : 14);
                         if (additionalSubtitleTextView != null) {
@@ -1377,7 +1399,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                         }
                     } else {
                         if (titleTextView[i] != null && titleTextView[i].getVisibility() != GONE) {
-                            titleTextView[i].setTextSize(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 18 : 20);
+                            titleTextView[i].setTextSize(glassMode ? 17 : !AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 18 : 20);
                         }
                         if (subtitleTextView != null && subtitleTextView.getVisibility() != GONE) {
                             subtitleTextView.setTextSize(!AndroidUtilities.isTablet() && getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 14 : 16);
@@ -1439,9 +1461,9 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         int textLeft;
         if (backButtonImageView != null && backButtonImageView.getVisibility() != GONE) {
             backButtonImageView.layout(0, additionalTop, backButtonImageView.getMeasuredWidth(), additionalTop + backButtonImageView.getMeasuredHeight());
-            textLeft = dp(AndroidUtilities.isTablet() ? 80 : 72);
+            textLeft = glassMode ? dp(76) : dp(AndroidUtilities.isTablet() ? 80 : 72);
         } else {
-            textLeft = dp(AndroidUtilities.isTablet() ? 26 : 18);
+            textLeft = glassMode ? dp(24) : dp(AndroidUtilities.isTablet() ? 26 : 18);
         }
 
         if (menu != null && menu.getVisibility() != GONE) {
@@ -2003,7 +2025,7 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        if (blurredBackground && actionBarColor != Color.TRANSPARENT) {
+        if (blurredBackground && !glassMode && actionBarColor != Color.TRANSPARENT) {
             rectTmp.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
             blurScrimPaint.setColor(actionBarColor);
             if (adaptiveBackground) {
@@ -2011,6 +2033,9 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             } else {
                 contentView.drawBlurRect(canvas, getY(), rectTmp, blurScrimPaint, true);
             }
+        }
+        if (glassMode) {
+            drawGlass(canvas);
         }
         super.dispatchDraw(canvas);
     }
@@ -2051,6 +2076,15 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
     @Override
     public void updateColors() {
         adaptive_updateColor();
+        if (glassDrawable != null) {
+            glassDrawable.updateColors();
+        }
+        if (glassDrawableMenu != null) {
+            glassDrawableMenu.updateColors();
+        }
+        if (glassDrawableBack != null) {
+            glassDrawableBack.updateColors();
+        }
         if (additionalSubTitleOverlayContainer != null) {
             additionalSubTitleOverlayContainer.updateColors();
         }
@@ -2175,24 +2209,35 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         }
     }
 
-    // GhostGram: Cherrygram ActionBar additions.
-    // Appearance batch (PLAN.md 22.2b): the glass title pill and the iOS unread
-    // badge are now actually drawn. The donor's full implementation is woven
-    // into the TG13 ActionBar (separate back/menu glass drawables, CounterView
-    // back-pill geometry, pill animators) and cannot be lifted wholesale into
-    // this base; what is implemented here is the visible core the settings
-    // previews exercise: setupGlass() creates the blurred-background drawable
-    // exactly like the donor (factory.create + color provider + radius +
-    // padding) and dispatchDraw() paints it as the pill behind the header
-    // content, and UnreadImageView paints the count pill itself (the donor
-    // hosts a CounterView child instead). Only the preview cells call
-    // setupGlass() in this tree, so real screens are unaffected.
-    // updateBackPillWidth() stays a no-op: this base has no back-pill layout.
+    // GhostGram: Cherrygram ActionBar glass system (PLAN.md 22.2b + 23).
+    // Full three-pill implementation equivalent to the donor (TG13 ActionBar
+    // + Cherrygram additions): setupGlass() creates the title / back / menu
+    // blurred drawables exactly like the donor (factory.create + color
+    // provider + radius 23 + padding 6), drawGlass() paints them from
+    // dispatchDraw() behind the children with the donor's geometry, and the
+    // back pill grows through animatorBackPillWidth when the iOS unread
+    // badge shows. The donor hosts the badge in a CounterView child of the
+    // bar; this base paints it inside UnreadImageView instead, so the
+    // pill-width machinery reads the badge's drawn width from that view
+    // (equivalent geometry; the badge's left offset inside the widened back
+    // button is 33dp where the donor lays its sibling counter at 30dp).
     private ChatAvatarContainer chatAvatarContainer2;
     private boolean forceAdaptiveWidth;
     private boolean isIOSUnreadBadgeAvailable;
     private BlurredBackgroundDrawable glassDrawable;
+    private BlurredBackgroundDrawable glassDrawableBack;
+    private BlurredBackgroundDrawable glassDrawableMenu;
     private boolean glassMode;
+    private boolean glassOnlyBack;
+    private boolean glassModeIsForum;
+
+    public boolean doNotDrawGlassMenu;
+    private boolean drawGlassTitle = true;
+
+    private final FactorAnimator animatorBackPillWidth = new FactorAnimator(0, this, CubicBezierInterpolator.EASE_OUT_QUINT, 380);
+    private static final int BACK_COUNTER_LEFT_OFFSET_DP = 33;
+    private static final int BACK_COUNTER_MAX_EXTRA_DP = 35;
+    private boolean backPillCounterShown;
 
     public void setChatAvatarContainer2(ChatAvatarContainer chatAvatarContainer) {
         this.chatAvatarContainer2 = chatAvatarContainer;
@@ -2202,51 +2247,344 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
         this.forceAdaptiveWidth = forceAdaptiveWidth;
     }
 
+    public void setGlassOnlyBack() {
+        glassOnlyBack = true;
+    }
+
+    public void setDrawGlassTitle(boolean draw) {
+        if (drawGlassTitle != draw) {
+            drawGlassTitle = draw;
+            invalidate();
+        }
+    }
+
+    public boolean isGlassMode() {
+        return glassMode;
+    }
+
+    private boolean isTitleCentered() {
+        return CherrygramAppearanceConfig.INSTANCE.getCenterTitle() || (chatAvatarContainer2 != null && chatAvatarContainer2.isCentered());
+    }
+
+    private boolean isAdaptiveWidthSupported() {
+        return forceAdaptiveWidth || (CherrygramChatsConfig.INSTANCE.getCenterChatTitle_AdaptiveWidth()
+                && chatAvatarContainer2 != null && chatAvatarContainer2.isCentered()
+                && !actionModeVisible && !isSearchFieldVisible);
+    }
+
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider) {
         setupGlass(factory, colorProvider, false);
     }
 
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider, boolean isForum) {
         setBackground(null);
+        setClipChildren(false);
         glassMode = true;
+        glassModeIsForum = isForum && !isTitleCentered();
+
         glassDrawable = factory.create(this)
+                .setColorProvider(colorProvider)
+                .setPadding(dp(6));
+        if (glassModeIsForum) {
+            glassDrawable.setRadius(dp(18.33f), dp(23), dp(23), dp(18.33f));
+        } else {
+            glassDrawable.setRadius(dp(23));
+        }
+
+        glassDrawableBack = factory.create(this)
                 .setColorProvider(colorProvider)
                 .setRadius(dp(23))
                 .setPadding(dp(6));
+
+        glassDrawableMenu = factory.create(this)
+                .setColorProvider(colorProvider)
+                .setRadius(dp(23))
+                .setPadding(dp(6));
+
+        if (menu != null) {
+            menu.setTranslationX(-dp(10));
+            menu.setGlassMode(true);
+        }
+        if (actionMode != null) {
+            actionMode.setTranslationX(-dp(10));
+            actionMode.setGlassMode(true);
+        }
+        if (backButtonImageView != null) {
+            backButtonImageView.setTranslationX(dp(2));
+        }
+        refreshBackButtonSelector();
         invalidate();
     }
 
-    @Override
-    protected void dispatchDraw(Canvas canvas) {
-        if (glassDrawable != null) {
-            final int p = dp(6);
-            final int s = dp(46);
-            final int t = getHeight() - (getCurrentActionBarHeight() + s) / 2 - p;
-            glassDrawable.setBounds(p, t, Math.max(p, getWidth() - p), t + s + p * 2);
-            glassDrawable.draw(canvas);
+    private int getGlassMenuWidth() {
+        if (isSearchFieldVisible) {
+            return 0;
         }
-        super.dispatchDraw(canvas);
+        if (actionModeVisible && actionMode != null) {
+            return Math.max(0, actionMode.getItemsMeasuredWidth(true) - dp(2));
+        }
+        if (menu != null && menu.getVisibility() == View.VISIBLE && !menu.searchFieldVisible()) {
+            return Math.max(0, menu.getItemsMeasuredWidth(true) - dp(2));
+        }
+        return 0;
+    }
+
+    private void drawGlass(Canvas canvas) {
+        final int p = dp(6);
+        final int s = dp(46);
+
+        final boolean hasBackButton = backButtonImageView != null && backButtonImageView.getVisibility() == View.VISIBLE;
+
+        final int t = getHeight() - (getCurrentActionBarHeight() + s) / 2 - p;
+        final int b = t + s + p * 2;
+
+        final int menuWidth = getGlassMenuWidth();
+
+        if (glassDrawable != null && !glassOnlyBack && drawGlassTitle && !isSearchFieldVisible) {
+            final int menuWidthWithPadding = menuWidth > 0 ? menuWidth + p : 0;
+            final int leftDefault = hasBackButton ? getBackPillWidth() - p : 0;
+            final int rightDefault = getWidth() - menuWidthWithPadding;
+            int left = leftDefault;
+            int right = rightDefault;
+            if (chatAvatarContainer2 != null && chatAvatarContainer2.isCentered() && isAdaptiveWidthSupported() && !actionModeVisible) {
+                int titleWidth = 0;
+                int subtitleWidth = 0;
+                if (chatAvatarContainer2.getTitleTextView() != null) {
+                    titleWidth = chatAvatarContainer2.getTitleTextView().getMeasuredWidth();
+                }
+                if (chatAvatarContainer2.getSubtitleTextView() != null) {
+                    subtitleWidth = chatAvatarContainer2.getSubtitleTextView().getMeasuredWidth();
+                }
+                final int targetWidth = Math.max(dp(100), Math.max(titleWidth, subtitleWidth) + dp(40)) + dp(15);
+                final int width = Math.min(rightDefault - leftDefault, targetWidth + p * 2);
+                if (width > 0) {
+                    left = (rightDefault + leftDefault - width) / 2;
+                    right = left + width;
+                }
+            }
+            if (right > left) {
+                glassDrawable.setBounds(left, t, right, b);
+                glassDrawable.draw(canvas);
+            }
+        }
+        if (glassDrawableBack != null && hasBackButton) {
+            glassDrawableBack.setBounds(0, t, getBackPillWidth(), b);
+            glassDrawableBack.draw(canvas);
+        }
+        if (glassDrawableMenu != null && menuWidth > 0 && !glassOnlyBack && !doNotDrawGlassMenu && !isSearchFieldVisible) {
+            glassDrawableMenu.setBounds(getWidth() - Math.max(s, menuWidth) - p * 2, t, getWidth(), b);
+            glassDrawableMenu.draw(canvas);
+        }
+    }
+
+    @Override
+    public void onFactorChanged(int id, float factor, float fraction, FactorAnimator callee) {
+        if (callee == animatorBackPillWidth) {
+            relayoutBackButtonForPill();
+        }
+        invalidate();
+    }
+
+    private void refreshBackButtonSelector() {
+        if (backButtonImageView != null) {
+            backButtonImageView.setBackgroundDrawable(Theme.createSelectorDrawable(actionModeVisible ? itemsActionModeBackgroundColor : itemsBackgroundColor));
+        }
     }
 
     public void setIOSUnreadBadgeAvailable(boolean available) {
         this.isIOSUnreadBadgeAvailable = available;
+        refreshBackButtonSelector();
     }
 
     public boolean iOSUnreadBadgeAvailable() {
-        return isIOSUnreadBadgeAvailable;
+        return CherrygramChatsConfig.INSTANCE.getCenterChatTitle() && CherrygramChatsConfig.INSTANCE.getUnreadBadgeOnBackButton_iOS() && isIOSUnreadBadgeAvailable;
+    }
+
+    private int getBackPillCounterTargetWidth() {
+        if (backButtonImageView == null) {
+            return 0;
+        }
+        return Math.min(dp(BACK_COUNTER_MAX_EXTRA_DP), Math.max(0, backButtonImageView.getBadgeContentWidth()));
     }
 
     public void updateBackPillWidth(boolean animated) {
-        // No-op: back-pill badge system (CounterView pill) not ported to this base.
+        boolean show = iOSUnreadBadgeAvailable()
+                && backButtonImageView != null
+                && backButtonImageView.getUnreadCount() > 0
+                && !isActionModeShowed()
+                && !isSearchFieldVisible;
+
+        int target = show ? getBackPillCounterTargetWidth() : 0;
+
+        if (backPillCounterShown != show) {
+            backPillCounterShown = show;
+            updateMoveBackIconState(show);
+        }
+
+        if (animated) {
+            if (animatorBackPillWidth.getToFactor() != target) {
+                animatorBackPillWidth.animateTo(target);
+            }
+        } else {
+            animatorBackPillWidth.forceFactor(target);
+        }
+        if (backButtonImageView != null) {
+            backButtonImageView.invalidate();
+        }
+    }
+
+    private void updateMoveBackIconState(boolean show) {
+        if (backButtonImageView != null) {
+            Drawable drawable = backButtonImageView.getDrawable();
+            if (drawable instanceof BackDrawable) {
+                ((BackDrawable) drawable).setMoveBackIcon(show && !isSearchFieldVisible);
+            }
+        }
+    }
+
+    private int getBackPillCounterExtraWidth() {
+        if (!iOSUnreadBadgeAvailable() || backButtonImageView == null) {
+            return 0;
+        }
+        return Math.max(0, (int) animatorBackPillWidth.getFactor());
+    }
+
+    private int getBackPillWidth() {
+        final int p = dp(6);
+        final int s = dp(46);
+        int width = s + p * 2;
+        int extra = getBackPillCounterExtraWidth();
+        if (extra > 0 && backButtonImageView != null) {
+            int badgeLeft = dp(BACK_COUNTER_LEFT_OFFSET_DP) + (int) backButtonImageView.getTranslationX();
+            width = Math.max(width, badgeLeft + extra + getBackPillCounterRightPadding());
+        }
+        return width;
+    }
+
+    public int getBackPillCounterRightPadding() {
+        int count = (backButtonImageView != null) ? backButtonImageView.getUnreadCount() : 0;
+
+        if (count <= 0) {
+            return 0;
+        }
+
+        String countStr = String.valueOf(Math.min(999, count));
+        int length = countStr.length();
+
+        if (length == 1) {
+            return dp(3.5F);
+        } else if (length == 2) {
+            return dp(7.5F);
+        } else {
+            return dp(13.5F);
+        }
+    }
+
+    public int getBackPillGrowth() {
+        return Math.max(0, getBackPillWidth() - (dp(46) + dp(6) * 2));
+    }
+
+    private boolean isBackPillMode() {
+        return glassDrawableBack != null && iOSUnreadBadgeAvailable();
+    }
+
+    private int getBackButtonWidth() {
+        if (!isBackPillMode()) {
+            return dp(54);
+        }
+        return Math.max(dp(54), (int) (getBackPillWidth() - dp(6) - backButtonImageView.getTranslationX()));
+    }
+
+    private void measureBackButton(int heightSpec) {
+        final int width = getBackButtonWidth();
+        final int paddingRight = width - dp(54);
+        if (backButtonImageView.getPaddingRight() != paddingRight) {
+            final boolean wasIgnoring = ignoreLayoutRequest;
+            ignoreLayoutRequest = true;
+            backButtonImageView.setPadding(backButtonImageView.getPaddingLeft(), 0, paddingRight, 0);
+            ignoreLayoutRequest = wasIgnoring;
+        }
+        backButtonImageView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), heightSpec);
+    }
+
+    private void relayoutBackButtonForPill() {
+        if (backButtonImageView == null || backButtonImageView.getVisibility() == GONE || backButtonImageView.getMeasuredHeight() == 0) {
+            return;
+        }
+        if (backButtonImageView.getMeasuredWidth() == getBackButtonWidth()) {
+            return;
+        }
+        measureBackButton(MeasureSpec.makeMeasureSpec(backButtonImageView.getMeasuredHeight(), MeasureSpec.EXACTLY));
+        final int left = backButtonImageView.getLeft();
+        final int top = backButtonImageView.getTop();
+        backButtonImageView.layout(left, top, left + backButtonImageView.getMeasuredWidth(), top + backButtonImageView.getMeasuredHeight());
+    }
+
+    public boolean hasBackPillCounter() {
+        return backButtonImageView != null && backButtonImageView.getVisibility() == View.VISIBLE && getBackPillCounterExtraWidth() > 0;
     }
 
     public class UnreadImageView extends ImageView {
         private int unreadCount = -1;
         private final Paint pillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final TextPaint pillTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private RippleDrawable pillRipple;
 
         public UnreadImageView(Context context) {
             super(context);
+        }
+
+        @Override
+        public void setBackgroundDrawable(Drawable background) {
+            if (isBackPillMode()) {
+                final int color = actionModeVisible ? itemsActionModeBackgroundColor : itemsBackgroundColor;
+                if (pillRipple == null) {
+                    GradientDrawable mask = new GradientDrawable();
+                    mask.setColor(Color.WHITE);
+                    mask.setCornerRadius(dp(23));
+                    pillRipple = new RippleDrawable(ColorStateList.valueOf(color), null, mask);
+                    pillRipple.setCallback(this);
+                    pillRipple.setState(getDrawableState());
+                } else {
+                    pillRipple.setColor(ColorStateList.valueOf(color));
+                }
+                super.setBackgroundDrawable(null);
+            } else {
+                if (pillRipple != null) {
+                    pillRipple.setCallback(null);
+                    pillRipple = null;
+                }
+                super.setBackgroundDrawable(background);
+            }
+        }
+
+        @Override
+        protected boolean verifyDrawable(@NonNull Drawable who) {
+            return who == pillRipple || super.verifyDrawable(who);
+        }
+
+        @Override
+        protected void drawableStateChanged() {
+            super.drawableStateChanged();
+            if (pillRipple != null) {
+                pillRipple.setState(getDrawableState());
+            }
+        }
+
+        @Override
+        public void drawableHotspotChanged(float x, float y) {
+            super.drawableHotspotChanged(x, y);
+            if (pillRipple != null) {
+                pillRipple.setHotspot(x, y);
+            }
+        }
+
+        @Override
+        public void jumpDrawablesToCurrentState() {
+            super.jumpDrawablesToCurrentState();
+            if (pillRipple != null) {
+                pillRipple.jumpToCurrentState();
+            }
         }
 
         public void checkUnreadView(int count) {
@@ -2258,6 +2596,16 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             return unreadCount;
         }
 
+        public int getBadgeContentWidth() {
+            if (unreadCount <= 0) {
+                return 0;
+            }
+            String text = unreadCount > 99 ? "99+" : String.valueOf(unreadCount);
+            pillTextPaint.setTextSize(dp(12));
+            pillTextPaint.setTypeface(AndroidUtilities.bold());
+            return Math.max(dp(18), (int) Math.ceil(pillTextPaint.measureText(text)) + dp(11));
+        }
+
         public void setUnread(int count) {
             count = Math.max(0, count);
             if (count > 999) {
@@ -2265,13 +2613,20 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
             }
             unreadCount = count;
             invalidate();
+            if (iOSUnreadBadgeAvailable()) {
+                updateBackPillWidth(true);
+            }
         }
 
-        // GhostGram (PLAN.md 22.2b): local badge rendering. The donor draws the
-        // count with a CounterView pill anchored to its TG13 back pill; here the
-        // pill is painted directly, iOS-style, right of the back arrow.
         @Override
         protected void onDraw(Canvas canvas) {
+            if (pillRipple != null) {
+                final int p = dp(6);
+                final int offsetX = getLeft() + (int) getTranslationX();
+                final int pillTop = ActionBar.this.getHeight() - (getCurrentActionBarHeight() + dp(46)) / 2 - getTop();
+                pillRipple.setBounds(p - offsetX, pillTop, getBackPillWidth() - p - offsetX, pillTop + dp(46));
+                pillRipple.draw(canvas);
+            }
             super.onDraw(canvas);
             if (unreadCount > 0) {
                 String text = unreadCount > 99 ? "99+" : String.valueOf(unreadCount);
@@ -2280,11 +2635,18 @@ public class ActionBar extends FrameLayout implements Theme.Colorable {
                 float textWidth = pillTextPaint.measureText(text);
                 float pillHeight = dp(18);
                 float pillWidth = Math.max(pillHeight, textWidth + dp(11));
-                float left = dp(33);
+                float left = dp(BACK_COUNTER_LEFT_OFFSET_DP);
                 float top = (getHeight() - pillHeight) / 2f;
+                int alpha = 255;
+                if (isBackPillMode()) {
+                    int fullWidth = Math.max(1, getBackPillCounterTargetWidth());
+                    alpha = (int) (255 * Math.min(1f, getBackPillCounterExtraWidth() / (float) fullWidth));
+                }
                 pillPaint.setColor(getThemedColor(Theme.key_actionBarActionModeDefault));
+                pillPaint.setAlpha(alpha);
                 canvas.drawRoundRect(left, top, left + pillWidth, top + pillHeight, pillHeight / 2f, pillHeight / 2f, pillPaint);
                 pillTextPaint.setColor(getThemedColor(Theme.key_actionBarActionModeDefaultIcon));
+                pillTextPaint.setAlpha(alpha);
                 float baseline = top + pillHeight / 2f - (pillTextPaint.descent() + pillTextPaint.ascent()) / 2f;
                 canvas.drawText(text, left + (pillWidth - textWidth) / 2f, baseline, pillTextPaint);
             }

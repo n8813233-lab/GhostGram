@@ -2987,6 +2987,7 @@ public class ChatActivity extends BaseFragment implements
         if (chatMode != MODE_SCHEDULED) {
             if (threadMessageId == 0) {
                 getNotificationCenter().addObserver(this, NotificationCenter.screenshotTook);
+                getNotificationCenter().addObserver(this, NotificationCenter.dialogsUnreadCounterChanged);
                 getNotificationCenter().addObserver(this, NotificationCenter.encryptedChatUpdated);
                 getNotificationCenter().addObserver(this, NotificationCenter.messagesReadEncrypted);
                 getNotificationCenter().addObserver(this, NotificationCenter.updateMentionsCount);
@@ -3513,6 +3514,7 @@ public class ChatActivity extends BaseFragment implements
         getNotificationCenter().removePostponeNotificationsCallback(postponeNotificationsWhileLoadingCallback);
         getMessagesController().setLastCreatedDialogId(dialog_id, chatMode == MODE_SCHEDULED, false);
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
+        getNotificationCenter().removeObserver(this, NotificationCenter.dialogsUnreadCounterChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.loadingMessagesFailed);
         getNotificationCenter().removeObserver(this, NotificationCenter.premiumFloodWaitReceived);
         getNotificationCenter().removeObserver(this, NotificationCenter.updatedChatRanks);
@@ -3920,6 +3922,7 @@ public class ChatActivity extends BaseFragment implements
             actionBar.setBackButtonDrawable(null);
         } else {
             actionBar.setBackButtonDrawable(new BackDrawable(isReport()));
+            updateIOSUnreadBadge();
         }
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -4471,6 +4474,7 @@ public class ChatActivity extends BaseFragment implements
                 openSearchWithText(isSupportedTags() ? "" : null);
             }
         };
+        avatarContainer.setGlassMode();
         avatarContainer.allowShorterStatus = true;
         avatarContainer.premiumIconHiddable = true;
         avatarContainer.allowDrawStories = dialog_id < 0 && !isTopic;
@@ -4852,6 +4856,18 @@ public class ChatActivity extends BaseFragment implements
         glassBackgroundDrawableFactory.setSourceRootView(viewPositionWatcher, contentView);
         glassBackgroundDrawableFactoryFrosted.setSourceRootView(viewPositionWatcher, contentView);
         navbarContentDrawableFactory.setSourceRootView(viewPositionWatcher, contentView);
+
+        // GhostGram (PLAN.md 23): donor wiring — the chat top bar runs in
+        // glass mode (back / title / menu pills), and the avatar container is
+        // registered for the centered-title pill geometry.
+        actionBar.setupGlass(glassBackgroundDrawableFactory, BlurredBackgroundProviderImpl.topPanelChatActivity(themeDelegate), ChatObject.isForum(currentChat));
+        if (isTitleCentered()) {
+            avatarContainer.setActionBar(actionBar);
+            actionBar.setChatAvatarContainer2(avatarContainer);
+        } else if (chatMode == MODE_PINNED || isComments) {
+            avatarContainer.setActionBar(actionBar);
+            actionBar.setChatAvatarContainer2(avatarContainer);
+        }
 
         contentView.setOccupyStatusBar(!inBubbleMode && !isInsideContainer && !inPreviewMode);
 
@@ -20920,6 +20936,27 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
+    // GhostGram (PLAN.md 23): donor iOS unread badge on the back button,
+    // including its glass back-pill growth. The donor refreshes it from a
+    // Cherrygram-only NotificationCenter event (cgUnreadCounterChanged);
+    // this base observes the stock dialogsUnreadCounterChanged event, which
+    // NotificationsController posts at the same counter-update sites.
+    private boolean isTitleCentered() {
+        return CherrygramChatsConfig.INSTANCE.getCenterChatTitle()
+                && !isReport()
+                && getChatMode() != ChatActivity.MODE_SEARCH && getChatMode() != ChatActivity.MODE_SAVED
+                && getDialogId() != 0 && getDialogId() != UserConfig.getInstance(UserConfig.selectedAccount).getClientUserId();
+    }
+
+    private void updateIOSUnreadBadge() {
+        if (actionBar != null && actionBar.backButtonImageView != null) {
+            actionBar.setIOSUnreadBadgeAvailable(getMessagesStorage().getMainUnreadCount() > 0 && isTitleCentered());
+            actionBar.backButtonImageView.checkUnreadView(getMessagesStorage().getMainUnreadCount());
+
+            actionBar.updateBackPillWidth(true);
+        }
+    }
+
     private void removeUnreadPlane(boolean scrollToEnd) {
         if (unreadMessageObject != null) {
             if (scrollToEnd) {
@@ -20932,10 +20969,14 @@ public class ChatActivity extends BaseFragment implements
             removeMessageObject(unreadMessageObject);
             unreadMessageObject = null;
         }
+        updateIOSUnreadBadge();
     }
 
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
+        if (id == NotificationCenter.dialogsUnreadCounterChanged) {
+            updateIOSUnreadBadge();
+        }
         if (id == NotificationCenter.mangoDownloadCompleted) {
             updateMangoDownloadShortcut(true);
             return;

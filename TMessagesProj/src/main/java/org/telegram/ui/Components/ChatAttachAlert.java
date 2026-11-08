@@ -295,7 +295,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
                     @Override
                     public void onWebAppSetActionBarColor(int colorKey, int color, boolean isOverrideColor) {
-                        int from = ((ColorDrawable) actionBar.getBackground()).getColor();
+                        int from = actionBar.getBackground() instanceof ColorDrawable ? ((ColorDrawable) actionBar.getBackground()).getColor() : 0;
                         int to = color;
 
                         BotWebViewMenuContainer.ActionBarColorsAnimating actionBarColorsAnimating = new BotWebViewMenuContainer.ActionBarColorsAnimating();
@@ -2161,6 +2161,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         actionBar.setOccupyStatusBar(true);
         actionBar.setAlpha(0.0f);
         actionBar.setDrawBlurBackground(sizeNotifierFrameLayout);
+        // GhostGram (PLAN.md 23): donor wiring — glass pills for the attach
+        // sheet's top bar (the donor builds a tuned color provider for this
+        // call; the standard topPanel provider is used here). ActionBar's
+        // dispatchDraw skips its legacy full-width blur rect in glass mode.
+        actionBar.setupGlass(iBlur3FactoryLiquidGlass, BlurredBackgroundProviderImpl.topPanel(resourcesProvider));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {

@@ -30,6 +30,35 @@ public class ActionBarMenu extends LinearLayout {
     public boolean drawBlur = true;
     protected ActionBar parentActionBar;
     protected boolean isActionMode;
+    private boolean glassMode;
+
+    // GhostGram (PLAN.md 23): donor glass mode for the top-bar menu pill;
+    // items are pulled 5dp closer on both sides so they sit inside the pill.
+    public void setGlassMode(boolean glassMode) {
+        this.glassMode = glassMode;
+    }
+
+    public boolean isGlassMode() {
+        return glassMode;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        if (glassMode) {
+            for (int a = 0, N = getChildCount(); a < N; a++) {
+                final View view = getChildAt(a);
+                if (view instanceof ActionBarMenuItem) {
+                    final ViewGroup.LayoutParams lp = view.getLayoutParams();
+                    if (lp instanceof MarginLayoutParams) {
+                        MarginLayoutParams mlp = (MarginLayoutParams) lp;
+                        mlp.leftMargin = -AndroidUtilities.dp(5);
+                        mlp.rightMargin = -AndroidUtilities.dp(5);
+                    }
+                }
+            }
+        }
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
 
     private ArrayList<Integer> ids;
 

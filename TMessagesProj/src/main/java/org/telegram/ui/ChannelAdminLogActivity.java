@@ -83,6 +83,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
+import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
@@ -124,6 +125,12 @@ import org.telegram.ui.Cells.ChatUnreadCell;
 import org.telegram.ui.Components.AdminLogFilterAlert2;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.Bulletin;
+import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
+import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
+import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
+import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
+import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceWrapped;
+import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.ChatScrimPopupContainerLayout;
@@ -1103,6 +1110,27 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
 
         contentView.setOccupyStatusBar(!AndroidUtilities.isTablet());
         contentView.setBackgroundImage(Theme.getCachedWallpaper(), Theme.isWallpaperMotion());
+
+        // GhostGram (PLAN.md 23): donor wiring — glass top bar for the admin
+        // log. The donor builds its factories over a wallpaper source with
+        // the TG13 glass engine; here the same RenderNode-over-content
+        // pattern the settings preview uses captures the wallpaper and list
+        // behind the bar, with a plain color source below Android S.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ViewPositionWatcher glassViewPositionWatcher = new ViewPositionWatcher(contentView);
+            BlurredBackgroundSourceWrapped navbarContentSourceWallpaper = new BlurredBackgroundSourceWrapped();
+            BlurredBackgroundSourceRenderNode glassBackgroundSourceRenderNode = new BlurredBackgroundSourceRenderNode(navbarContentSourceWallpaper);
+            glassBackgroundSourceRenderNode.setUnderSource(navbarContentSourceWallpaper);
+            BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactory = new BlurredBackgroundDrawableViewFactory(glassBackgroundSourceRenderNode);
+            glassBackgroundDrawableFactory.setLiquidGlassEffectAllowed(LiteMode.isEnabled(LiteMode.FLAG_LIQUID_GLASS));
+            glassBackgroundDrawableFactory.setSourceRootView(glassViewPositionWatcher, contentView);
+            actionBar.setupGlass(glassBackgroundDrawableFactory, BlurredBackgroundProviderImpl.topPanelChatActivity(resourceProvider));
+        } else {
+            BlurredBackgroundSourceColor sourceColor = new BlurredBackgroundSourceColor();
+            sourceColor.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
+            BlurredBackgroundDrawableViewFactory glassBackgroundDrawableFactory = new BlurredBackgroundDrawableViewFactory(sourceColor);
+            actionBar.setupGlass(glassBackgroundDrawableFactory, BlurredBackgroundProviderImpl.topPanelChatActivity(resourceProvider));
+        }
 
         emptyViewContainer = new FrameLayout(context);
         emptyViewContainer.setVisibility(View.INVISIBLE);

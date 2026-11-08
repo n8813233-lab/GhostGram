@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "1058545853294",
-    "project_id": "inugram-5dcad",
-    "storage_bucket": "inugram-5dcad.firebasestorage.app"
+    "project_number": "97364000718",
+    "project_id": "ghostgram-6a2e0",
+    "storage_bucket": "ghostgram-6a2e0.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1058545853294:android:fd3a66d8c6bde26b45177f",
+        "mobilesdk_app_id": "1:97364000718:android:55e3a7504b0cefae26f59f",
         "android_client_info": {
-          "package_name": "desu.inugram"
+          "package_name": "com.Ghost.wed"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBUTDbLj-lMgQkor-hY57AIpB2s033xaB0"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1058545853294:android:d6b70c9beedf100745177f",
-        "android_client_info": {
-          "package_name": "desu.inugram.beta"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBUTDbLj-lMgQkor-hY57AIpB2s033xaB0"
+          "current_key": "AIzaSyAP1lChNKgIv820fmrEzqiILwvnBd0SO54"
         }
       ],
       "services": {

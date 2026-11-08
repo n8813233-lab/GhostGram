@@ -16,21 +16,13 @@ object SplashScreenHelper {
         val icon = LauncherIcon.entries.firstOrNull { LauncherIconController.isEnabled(it) }
         // Each icon has the default background, followed by the five Monet modes.
         val themes = when (icon) {
-            LauncherIcon.STOCK, LauncherIcon.DISGUISE -> intArrayOf(
+            LauncherIcon.DISGUISE -> intArrayOf(
                 R.style.InuSplashStock,
                 R.style.InuSplashStockMonetLight,
                 R.style.InuSplashStockMonetDark,
                 R.style.InuSplashStockMonetAmoled,
                 R.style.InuSplashStockMonetAuto,
                 R.style.InuSplashStockMonetAutoAmoled,
-            )
-            LauncherIcon.VINTAGE -> intArrayOf(
-                R.style.InuSplashVintage,
-                R.style.InuSplashVintageMonetLight,
-                R.style.InuSplashVintageMonetDark,
-                R.style.InuSplashVintageMonetAmoled,
-                R.style.InuSplashVintageMonetAuto,
-                R.style.InuSplashVintageMonetAutoAmoled,
             )
             LauncherIcon.AQUA -> intArrayOf(
                 R.style.InuSplashAqua,

@@ -8,7 +8,7 @@
     <string name="InuNavigationDrawerInfo">v12.0 öncesi sol yan menüyü geri getirir.</string>
     <string name="InuDrawerBackGesture">Geri hareketiyle yan menüyü aç</string>
     <string name="InuDrawerBackGestureInfo">Sohbet listesinin sol kenarından sağa kaydırmak, uygulamadan çıkmak yerine yan menüyü açar.</string>
-    <string name="InuSettings">Inugram Ayarları</string>
+    <string name="InuSettings">GhostGram Ayarları</string>
     <string name="InuSettingsInfo">ne yapıyor bu köpek?</string>
     <string name="InuExperimental">Deneysel</string>
     <string name="InuGeneral">Genel</string>

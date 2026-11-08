@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="AppName">Inugram</string>
-    <string name="AppNameBeta">Inugram Beta</string>
+    <string name="AppName">GhostGram</string>
+    <string name="AppNameBeta">GhostGram Beta</string>
     <string name="LanguageName">English</string>
     <string name="English">English</string>
     <string name="LanguageNameInEnglish">English</string>
@@ -2770,7 +2770,7 @@
     <string name="QRCodePermissionNoCameraWithHint">**Telegram** needs camera access so that you can scan QR codes. Tap Settings -> Permissions, and turn **Camera** on.</string>
     <string name="SetProfilePhoto">Set Profile Photo</string>
     <string name="AppUpdate">Update Inugram</string>
-    <string name="AppUpdateBeta">Update Inugram Beta</string>
+    <string name="AppUpdateBeta">Update GhostGram Beta</string>
     <string name="AppUpdateVersionAndSize">Version %1$s • %2$s</string>
     <string name="AppBetaUpdateVersion">Version %1$s (%2$s)</string>
     <string name="AppUpdateDownloading">Downloading %1$d%%...</string>
@@ -4212,7 +4212,7 @@
     <string name="ViewMessageStatistic">Message Statistic</string>
     <string name="ViewMessage">Open Message</string>
     <!--Intro view-->
-    <string name="Page1Title">Inugram</string>
+    <string name="Page1Title">GhostGram</string>
     <string name="Page2Title">Fast</string>
     <string name="Page3Title">Free</string>
     <string name="Page4Title">Secure</string>
@@ -5802,12 +5802,12 @@
     <string name="BioLimitTitle">Bio</string>
     <string name="BioLimitSubtitle">Add more symbols and use links in your bio.</string>
     <string name="AppIcon">App Icon</string>
-    <string name="AppIconDefault">Default</string>
+    <string name="AppIconGhost Blue">Ghost Blue</string>
     <string name="AppIconVintage">Vintage</string>
-    <string name="AppIconAqua">Aqua</string>
-    <string name="AppIconPremium">Premium</string>
-    <string name="AppIconTurbo">Turbo</string>
-    <string name="AppIconNox">Nox</string>
+    <string name="AppIconGhost Frost">Ghost Frost</string>
+    <string name="AppIconGhost Gloss">Ghost Gloss</string>
+    <string name="AppIconGhost Night">Ghost Night</string>
+    <string name="AppIconGhost Ink">Ghost Ink</string>
     <string name="AppIconChangedTo">App icon has been changed to %1$s</string>
     <string name="FileTooLarge">File Too Large</string>
     <string name="PremiumPreviewAppIcon">Premium App Icon</string>

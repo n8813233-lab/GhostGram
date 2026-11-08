@@ -2,7 +2,7 @@
 <resources>
     <string name="InuOpenInDiscussion">Открыть в обсуждении</string>
     <string name="InuBanUserConfirm">Заблокировать %1$s в этой группе?</string>
-    <string name="InuSettings">Настройки Inugram</string>
+    <string name="InuSettings">Настройки GhostGram</string>
     <string name="InuSettingsInfo">Что делает эта собачонка?</string>
     <string name="InuExperimental">Экспериментальное</string>
     <string name="InuGeneral">Основные</string>

@@ -189,12 +189,63 @@ public class SeekBar {
         lineHeight = value;
     }
 
+    // GhostGram (PLAN.md 27): inugram M3SliderHelper.drawPlain equivalent.
+    // The track height is capped by the host height (inugram's drawHandle
+    // applies the same min() guard for the handle) so small embedded hosts
+    // (e.g. message-cell voice seekbars) are not overflowed; the handle width
+    // switches discretely on press instead of inugram's 120ms animation,
+    // which this low-level class has no per-instance animator for.
+    private void drawM3(Canvas canvas) {
+        final float left = thumbWidth / 2f;
+        final float right = width - thumbWidth / 2f;
+        if (right <= left || height <= 0) {
+            return;
+        }
+        final float cy = height / 2f;
+        final float cx = (pressed ? draggingThumbX : thumbX) + thumbWidth / 2f;
+        final int activeColor = progressColor;
+        final int inactiveColor = selected ? backgroundSelectedColor : backgroundColor;
+        final float trackHeightDp = Math.min(M3SliderDraw.TRACK_HEIGHT, height / AndroidUtilities.density);
+        final float hw = AndroidUtilities.dpf2(pressed ? M3SliderDraw.HANDLE_WIDTH_PRESSED : M3SliderDraw.HANDLE_WIDTH) / 2f;
+        final float gap = AndroidUtilities.dpf2(M3SliderDraw.GAP);
+        final float outerR = AndroidUtilities.dpf2(M3SliderDraw.OUTER_RADIUS);
+        final float innerR = AndroidUtilities.dpf2(M3SliderDraw.INNER_RADIUS);
+        final float activeRight = cx - hw - gap;
+        final float inactiveLeft = cx + hw + gap;
+
+        M3SliderDraw.drawSpan(canvas, left, activeRight, cy, outerR, innerR, activeColor, -Float.MAX_VALUE, trackHeightDp);
+        M3SliderDraw.drawSpan(canvas, inactiveLeft, right, cy, innerR, outerR, inactiveColor, -Float.MAX_VALUE, trackHeightDp);
+
+        if (bufferedProgress > 0) {
+            final float bufferedRight = left + bufferedProgress * (right - left);
+            if (bufferedRight > inactiveLeft + 1f) {
+                paint.setColor(selected ? backgroundSelectedColor : cacheColor);
+                final float endR = bufferedRight >= right - 1f ? outerR : innerR;
+                M3SliderDraw.drawRounded(canvas, inactiveLeft, Math.min(bufferedRight, right), cy, innerR, endR, paint, trackHeightDp);
+            }
+        }
+
+        M3SliderDraw.drawStopIndicator(canvas, right, cy, inactiveLeft, activeColor);
+        M3SliderDraw.drawHandle(canvas, cx, cy, hw * 2f, height, activeColor);
+    }
+
     public void draw(Canvas canvas) {
         if (alpha <= 0) {
             return;
         }
         if (alpha < 1) {
             canvas.saveLayerAlpha(0, 0, width, height, (int) (255 * alpha), Canvas.ALL_SAVE_FLAG);
+        }
+        // GhostGram (PLAN.md 27): Material 3 slider rendering (inugram
+        // drawPlain equivalent) for the plain progress mode; chapter-timestamp
+        // tracks keep the stock rendering, as in inugram's SeekBarView rules.
+        if (timestamps == null || timestamps.isEmpty()) {
+            drawM3(canvas);
+            if (alpha < 1) {
+                canvas.restore();
+            }
+            updateTimestampAnimation();
+            return;
         }
         rect.set(thumbWidth / 2, height / 2 - lineHeight / 2, width - thumbWidth / 2, height / 2 + lineHeight / 2);
         paint.setColor(selected ? backgroundSelectedColor : backgroundColor);

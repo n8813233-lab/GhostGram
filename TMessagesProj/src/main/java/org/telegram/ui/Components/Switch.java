@@ -372,6 +372,24 @@ public class Switch extends View {
             return;
         }
 
+        // GhostGram (PLAN.md 27): Material 3 switch rendering (inugram
+        // M3SwitchHelper design) for the regular case. The overlay-color
+        // compositing path (overrideColorProgress != 0, used by the
+        // ripple-check pill over media) keeps the stock drawing, which
+        // inugram's helper does not model either.
+        if (overrideColorProgress == 0) {
+            float[] center = M3SwitchDraw.draw(canvas, getMeasuredWidth(), getMeasuredHeight(), progress, isChecked,
+                    drawIconType, iconProgress, iconDrawable,
+                    trackColorKey, trackCheckedColorKey, thumbCheckedColorKey, resourcesProvider);
+            if (rippleDrawable != null) {
+                int cx = Math.round(center[0]);
+                int cy = Math.round(center[1]);
+                rippleDrawable.setBounds(cx - AndroidUtilities.dp(18), cy - AndroidUtilities.dp(18), cx + AndroidUtilities.dp(18), cy + AndroidUtilities.dp(18));
+                rippleDrawable.draw(canvas);
+            }
+            return;
+        }
+
         int width = AndroidUtilities.dp(31);
         int thumb = AndroidUtilities.dp(20);
         int x = (getMeasuredWidth() - width) / 2;

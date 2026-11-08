@@ -369,6 +369,16 @@ public class ExtensionFeaturesActivity extends BaseFragment {
         all.add(UItem.asButton(ITEM_SECURITY_CHECK, R.drawable.msg_secret, getString(R.string.MangoSecurityCheck)));
         all.add(UItem.asButton(ITEM_HISTORY, R.drawable.msg_recent, getString(R.string.MangoRecentSettings)));
         all.add(UItem.asButton(ITEM_RESET_ALL, R.drawable.msg_delete, getString(R.string.MangoResetSettings)).red());
+        // GhostGram (PLAN.md 26): inugram-style presentation pass. The hub
+        // already groups rows under per-category headers with description
+        // shadows and renders them as rounded section cards on the gray page
+        // background (listView.setSections() in createView), and every
+        // button row carries a monochrome msg_* icon - the same visual
+        // language as inugram's settings hub. Switch rows intentionally
+        // keep no leading icon: the base switch cell (TextCheckCell2) has
+        // no leading-icon slot, and its only icon channel draws inside the
+        // switch track (reserved for the locked glyph), so a category icon
+        // cannot be shown there without framework surgery on a shared cell.
         if (!TextUtils.isEmpty(searchQuery)) {
             items.add(UItem.asHeader(getString(R.string.MangoSearchResults)));
             for (UItem item : all) {

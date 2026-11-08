@@ -70,7 +70,10 @@ public class FragmentFloatingButton extends FrameLayout implements FactorAnimato
 
         ScaleStateListAnimator.apply(this);
         if (!isSubButton) {
-            setOutlineProvider(ViewOutlineProviderImpl.BOUNDS_OVAL);
+            // GhostGram (PLAN.md 27): Material 3 FAB shape (inugram
+            // M3FabHelper) - 14dp rounded rect instead of a circle; the MD3
+            // standard 16dp-on-56dp radius scaled to Telegram's 48dp FABs.
+            setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(0, dpf2(14)));
             setTranslationZ(dpf2(0.5f));
         }
 
@@ -163,7 +166,9 @@ public class FragmentFloatingButton extends FrameLayout implements FactorAnimato
         } else {
             imageView.setColorFilter(Theme.getColor(Theme.key_chats_actionIcon, resourcesProvider), PorterDuff.Mode.SRC_IN);
             progressView.setProgressColor(Theme.getColor(Theme.key_chats_actionIcon, resourcesProvider));
-            setBackground(Theme.createSimpleSelectorCircleDrawable(dp(48),
+            // GhostGram (PLAN.md 27): M3 FAB selector background, same 14dp
+            // radius as the outline above (inugram M3FabHelper).
+            setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(14),
                 Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider),
                 Theme.getColor(Theme.key_featuredStickers_addButtonPressed, resourcesProvider)
             ));

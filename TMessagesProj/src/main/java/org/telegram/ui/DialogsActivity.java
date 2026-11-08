@@ -10588,7 +10588,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             if (fragmentView != null) {
                 fragmentView.requestLayout();
+                fragmentView.invalidate();
             }
+            // GhostGram uifix (PLAN.md 25): donor handler also re-evaluates the
+            // search field alpha immediately and refreshes the blur source.
+            checkUi_searchFieldVisibility();
+            blur3_InvalidateBlur();
         }
         if (id == NotificationCenter.dialogsNeedReload) {
             if (viewPages == null || dialogsListFrozen) {
@@ -14061,10 +14066,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         final float actionModeVisible = Math.max(progressToActionMode, animatorActionModeVisible.getFloatValue());
         final float searchFieldVisible = animatorSearchVisible.getFloatValue();
+        // GhostGram uifix (PLAN.md 25): donor branch missed by the appearance batch.
+        // When the home search field is hidden by preference, its rest-state alpha
+        // must come only from the explicit search-open state, not from scroll offset;
+        // otherwise the (zero-height) field still draws over the folder tabs row.
+        final boolean hideHomeSearchField = shouldHideHomeSearchField();
 
         final float factor0 = isSupportSearch() ? 1 : 0;
         final float factor1 = (1f - actionModeVisible) * (1f - animatorDoneButtonVisible.getFloatValue());
-        final float factor2 = Math.max(searchFieldVisible, alphaByScrollOffset * (1f - getRightSlidingProgress()));
+        final float factor2 = hideHomeSearchField
+                ? searchFieldVisible
+                : Math.max(searchFieldVisible, alphaByScrollOffset * (1f - getRightSlidingProgress()));
 
         final float alpha = factor0 * factor1 * factor2;
 

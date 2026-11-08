@@ -451,6 +451,12 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         }
     }
 
+    // GhostGram uifix (PLAN.md 25): read by ActionBar.drawGlass to reserve the
+    // avatar's slot when sizing the glass title pill.
+    public boolean isAvatarOnRight() {
+        return avatarOnRight;
+    }
+
     public void setAvatarOnRight(boolean avatarOnRight) {
         if (this.avatarOnRight == avatarOnRight) {
             return;

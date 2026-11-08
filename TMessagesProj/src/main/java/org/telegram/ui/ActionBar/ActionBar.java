@@ -2267,9 +2267,27 @@ public class ActionBar extends FrameLayout implements Theme.Colorable, FactorAni
     }
 
     private boolean isAdaptiveWidthSupported() {
+        // GhostGram uifix (PLAN.md 25): the base container's isCentered() is a
+        // stub that always returns false; the operative centered signal is the
+        // Cherrygram center-title preference, as in isTitleCentered().
         return forceAdaptiveWidth || (CherrygramChatsConfig.INSTANCE.getCenterChatTitle_AdaptiveWidth()
-                && chatAvatarContainer2 != null && chatAvatarContainer2.isCentered()
+                && isTitleCentered()
                 && !actionModeVisible && !isSearchFieldVisible);
+    }
+
+    // GhostGram uifix (PLAN.md 25): exact text width equivalent to the donor's
+    // SimpleTextView.getExactWidthIncludeDrawables(), which this base lacks.
+    // getTextWidth() already includes right drawables drawn inside; when the
+    // drawable sits outside, its width (plus drawable padding) is added.
+    private int getExactTextWidth(SimpleTextView view) {
+        if (view == null) {
+            return 0;
+        }
+        int width = view.getTextWidth();
+        if (view.getRightDrawableOutside()) {
+            width += view.getRightDrawableWidth();
+        }
+        return width;
     }
 
     public void setupGlass(BlurredBackgroundDrawableViewFactory factory, BlurredBackgroundColorProvider colorProvider) {
@@ -2343,17 +2361,37 @@ public class ActionBar extends FrameLayout implements Theme.Colorable, FactorAni
         if (glassDrawable != null && !glassOnlyBack && drawGlassTitle && !isSearchFieldVisible) {
             final int menuWidthWithPadding = menuWidth > 0 ? menuWidth + p : 0;
             final int leftDefault = hasBackButton ? getBackPillWidth() - p : 0;
-            final int rightDefault = getWidth() - menuWidthWithPadding;
+            int rightDefault = getWidth() - menuWidthWithPadding;
+            // GhostGram uifix (PLAN.md 25): in this base the avatar container
+            // runs in Mango's avatarOnRight mode - the avatar sits at the
+            // container's right edge, left of the menu pill. Reserve its real
+            // laid-out slot so the title pill ends one padding (6dp visual
+            // gap) before the avatar instead of running underneath it.
+            if (chatAvatarContainer2 != null && chatAvatarContainer2.isAvatarOnRight()
+                    && chatAvatarContainer2.avatarImageView != null
+                    && chatAvatarContainer2.avatarImageView.getVisibility() == View.VISIBLE) {
+                final int avatarLeft = chatAvatarContainer2.getLeft() + chatAvatarContainer2.avatarImageView.getLeft();
+                if (avatarLeft > leftDefault) {
+                    rightDefault = Math.min(rightDefault, avatarLeft);
+                }
+            }
             int left = leftDefault;
             int right = rightDefault;
-            if (chatAvatarContainer2 != null && chatAvatarContainer2.isCentered() && isAdaptiveWidthSupported() && !actionModeVisible) {
+            if (chatAvatarContainer2 != null && isTitleCentered() && isAdaptiveWidthSupported() && !actionModeVisible) {
+                // GhostGram uifix (PLAN.md 25): size from the exact text
+                // widths (donor checkAvatarContainerWidth formula). The old
+                // code used getMeasuredWidth(), but in avatarOnRight mode the
+                // title view is measured nearly full-span, so the pill always
+                // stretched wall to wall. The animated subtitle view has no
+                // exact-width API in this base; the 100dp floor covers the
+                // cases where the subtitle is the wider line.
                 int titleWidth = 0;
                 int subtitleWidth = 0;
                 if (chatAvatarContainer2.getTitleTextView() != null) {
-                    titleWidth = chatAvatarContainer2.getTitleTextView().getMeasuredWidth();
+                    titleWidth = getExactTextWidth(chatAvatarContainer2.getTitleTextView());
                 }
-                if (chatAvatarContainer2.getSubtitleTextView() != null) {
-                    subtitleWidth = chatAvatarContainer2.getSubtitleTextView().getMeasuredWidth();
+                if (chatAvatarContainer2.getSubtitleTextView() instanceof SimpleTextView) {
+                    subtitleWidth = getExactTextWidth((SimpleTextView) chatAvatarContainer2.getSubtitleTextView());
                 }
                 final int targetWidth = Math.max(dp(100), Math.max(titleWidth, subtitleWidth) + dp(40)) + dp(15);
                 final int width = Math.min(rightDefault - leftDefault, targetWidth + p * 2);

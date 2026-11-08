@@ -219,6 +219,13 @@ public class SlideChooseView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        // GhostGram (PLAN.md 27): Material 3 slider rendering (inugram design)
+        // replaces the stock dotted-line chooser; the label row below the
+        // track is reproduced verbatim from stock so layouts don't shift.
+        if (optionsStr != null && optionsStr.length > 0) {
+            drawM3(canvas);
+            return;
+        }
         float selectedIndexAnimated = selectedIndexAnimatedHolder.set(selectedIndex);
         float movingAnimated = movingAnimatedHolder.set(moving ? 1 : 0);
         int cy = getMeasuredHeight() / 2 + AndroidUtilities.dp(11);
@@ -290,6 +297,100 @@ public class SlideChooseView extends View {
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(12 * movingAnimated), paint);
         paint.setColor(getThemedColor(Theme.key_switchTrackChecked));
         canvas.drawCircle(cx, cy, AndroidUtilities.dp(6), paint);
+    }
+
+    // GhostGram (PLAN.md 27): inugram M3SliderHelper.drawSlideChoose
+    // equivalent. Track colors use this view's own switch palette
+    // (key_switchTrackChecked / key_switchTrack) instead of the player
+    // palette the Kotlin helper used, so the chooser matches the switches
+    // around it; geometry is inugram's exactly.
+    private void drawM3(Canvas canvas) {
+        final int count = optionsStr.length;
+        final float selectedAnimated = selectedIndexAnimatedHolder.set(selectedIndex);
+        final float movingAnimated = movingAnimatedHolder.set(moving ? 1f : 0f);
+        final float cy = getMeasuredHeight() / 2f + AndroidUtilities.dp(11);
+        final float stride = lineSize + gapSize * 2f + circleSize;
+
+        final float handleW = AndroidUtilities.lerp(
+                AndroidUtilities.dpf2(M3SliderDraw.HANDLE_WIDTH),
+                AndroidUtilities.dpf2(M3SliderDraw.HANDLE_WIDTH_PRESSED),
+                movingAnimated);
+        final float hw = handleW / 2f;
+        final float cx = centerXM3(selectedAnimated, stride);
+        final float outerR = AndroidUtilities.dpf2(M3SliderDraw.OUTER_RADIUS);
+        final float innerR = AndroidUtilities.dpf2(M3SliderDraw.INNER_RADIUS);
+        final float gap = AndroidUtilities.dpf2(M3SliderDraw.GAP);
+        final float trackLeft = centerXM3(0f, stride) - outerR;
+        final float trackRight = centerXM3(count - 1f, stride) + outerR;
+        final int activeColor = getThemedColor(Theme.key_switchTrackChecked);
+        final int inactiveColor = getThemedColor(Theme.key_switchTrack);
+
+        final boolean minActive = minIndex != Integer.MIN_VALUE && minIndex >= 0;
+        final float dimUntil = minActive ? centerXM3(minIndex, stride) : -Float.MAX_VALUE;
+        final float dimFrom = dashedFrom != -1 ? centerXM3(dashedFrom, stride) : Float.MAX_VALUE;
+        if (cx > centerXM3(0f, stride) + 1f) {
+            M3SliderDraw.drawSpan(canvas, trackLeft, cx - hw - gap, cy, outerR, innerR, activeColor, dimUntil, dimFrom, M3SliderDraw.TRACK_HEIGHT);
+        }
+        if (cx < centerXM3(count - 1f, stride) - 1f) {
+            M3SliderDraw.drawSpan(canvas, cx + hw + gap, trackRight, cy, innerR, outerR, inactiveColor, dimUntil, dimFrom, M3SliderDraw.TRACK_HEIGHT);
+        }
+
+        final float tickR = AndroidUtilities.dpf2(M3SliderDraw.TICK_RADIUS);
+        for (int a = 0; a < count; a++) {
+            final float x = centerXM3(a, stride);
+            if (Math.abs(x - cx) < hw + gap + tickR) {
+                continue;
+            }
+            int color = x < cx ? getThemedColor(Theme.key_windowBackgroundWhite) : activeColor;
+            if ((minActive && a <= minIndex) || (dashedFrom != -1 && a >= dashedFrom)) {
+                color = Theme.multAlpha(color, M3SliderDraw.DIM_ALPHA);
+            }
+            paint.setColor(color);
+            canvas.drawCircle(x, cy, tickR, paint);
+        }
+
+        M3SliderDraw.drawHandle(canvas, cx, cy, handleW, getMeasuredHeight(), activeColor);
+
+        // label row reproduced from stock onDraw so text/drawables land identically
+        for (int a = 0; a < count; a++) {
+            final float t = Math.max(0f, 1f - Math.abs(a - selectedAnimated));
+            final int size = optionsSizes[a];
+            final String text = optionsStr[a];
+            textPaint.setColor(ColorUtils.blendARGB(
+                    getThemedColor(Theme.key_windowBackgroundWhiteGrayText),
+                    getThemedColor(Theme.key_windowBackgroundWhiteBlueText),
+                    t));
+
+            if (leftDrawables != null) {
+                canvas.save();
+                if (a == 0) {
+                    canvas.translate(AndroidUtilities.dp(12), AndroidUtilities.dp(15.5f));
+                } else if (a == count - 1) {
+                    canvas.translate(getMeasuredWidth() - size - AndroidUtilities.dp(22) - AndroidUtilities.dp(10), AndroidUtilities.dp(28) - AndroidUtilities.dp(12.5f));
+                } else {
+                    canvas.translate(centerXM3(a, stride) - size / 2f - AndroidUtilities.dp(10), AndroidUtilities.dp(28) - AndroidUtilities.dp(12.5f));
+                }
+                leftDrawables[a].setColorFilter(textPaint.getColor(), PorterDuff.Mode.MULTIPLY);
+                leftDrawables[a].draw(canvas);
+                canvas.restore();
+                canvas.save();
+                canvas.translate(leftDrawables[a].getIntrinsicWidth() / 2f - AndroidUtilities.dp(a == 0 ? 3 : 2), 0);
+            }
+            if (a == 0) {
+                canvas.drawText(text, AndroidUtilities.dp(22), AndroidUtilities.dp(28), textPaint);
+            } else if (a == count - 1) {
+                canvas.drawText(text, getMeasuredWidth() - size - AndroidUtilities.dp(22), AndroidUtilities.dp(28), textPaint);
+            } else {
+                canvas.drawText(text, centerXM3(a, stride) - size / 2f, AndroidUtilities.dp(28), textPaint);
+            }
+            if (leftDrawables != null) {
+                canvas.restore();
+            }
+        }
+    }
+
+    private float centerXM3(float index, float stride) {
+        return sideSide + stride * index + circleSize / 2f;
     }
 
     @Override

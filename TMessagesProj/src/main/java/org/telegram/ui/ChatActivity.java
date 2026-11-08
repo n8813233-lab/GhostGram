@@ -4539,7 +4539,13 @@ public class ChatActivity extends BaseFragment implements
             getConnectionsManager().bindRequestToGuid(req, classGuid);
         } else {
             int avatarLeftMargin = !inPreviewMode ? 56 : (chatMode == MODE_PINNED ? 10 : 0);
-            actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, avatarLeftMargin, 0, 40, 0));
+            // GhostGram uifix (PLAN.md 25): in avatarOnRight mode the stock
+            // 40dp right margin parks the 42dp avatar at [barW-82, barW-40],
+            // inside the glass menu pill's span [barW-52, barW-6]. Widen the
+            // margin to 66dp in exactly the cases where setAvatarOnRight(true)
+            // was applied above, so the avatar clears the pill with a gap.
+            int avatarRightMargin = (!inPreviewMode && !inBubbleMode && !isInsideContainer && !isReport()) ? 66 : 40;
+            actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, avatarLeftMargin, 0, avatarRightMargin, 0));
         }
 
         ActionBarMenu menu = actionBar.createMenu();
@@ -29955,7 +29961,9 @@ public class ChatActivity extends BaseFragment implements
             avatarContainer.setOccupyStatusBar(!value);
             avatarContainer.setTitleExpand(showAudioCallAsIcon);
             avatarContainer.setAvatarOnRight(!value && !inBubbleMode && !isInsideContainer && !isReport());
-            avatarContainer.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !value ? 56 : (chatMode == MODE_PINNED ? 10 : 0), 0, 40, 0));
+            // GhostGram uifix (PLAN.md 25): keep the widened right margin (see
+            // createView) when preview mode is left, for the same reason.
+            avatarContainer.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !value ? 56 : (chatMode == MODE_PINNED ? 10 : 0), 0, (!value && !inBubbleMode && !isInsideContainer && !isReport()) ? 66 : 40, 0));
         }
         if (chatActivityEnterView != null) {
             chatActivityEnterView.setVisibility(!value ? View.VISIBLE : View.INVISIBLE);
@@ -44322,7 +44330,24 @@ public class ChatActivity extends BaseFragment implements
         if (actionBar == null) {
             return !Theme.isCurrentThemeDark();
         }
+        // GhostGram uifix (PLAN.md 25): in glass mode the action bar has no
+        // background (setupGlass clears it), so the background-brightness
+        // fallback reads black; decide from the theme instead.
+        if (actionBar.isGlassMode()) {
+            return !Theme.isCurrentThemeDark();
+        }
         return AndroidUtilities.computePerceivedBrightness(actionBar.getBackgroundColor()) > 0.721f;
+    }
+
+    // GhostGram uifix (PLAN.md 25): with the glass top bar the action bar
+    // paints no background, and the base lacks the donor's wallpaper-derived
+    // status bar handling - the window status bar color stayed the dark
+    // overlay over the black window backdrop, showing as a black band above
+    // the pills. Force a transparent status bar while glass mode is on so
+    // the chat background shows behind the whole top bar.
+    @Override
+    public boolean hasForceLightStatusBar() {
+        return actionBar != null && actionBar.isGlassMode();
     }
 
     public MessageObject.GroupedMessages getGroup(long id) {

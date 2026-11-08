@@ -77,6 +77,9 @@ public class SeekBarView extends FrameLayout {
     private int lineWidthDp = 3;
 
     private boolean twoSided;
+    // GhostGram (PLAN.md 27): animated width of the Material 3 bar handle
+    // (inugram M3SliderHelper geometry, see M3SliderDraw).
+    private final AnimatedFloat m3HandleWidth = new AnimatedFloat(this, 0, 120, CubicBezierInterpolator.DEFAULT);
     private final Theme.ResourcesProvider resourcesProvider;
     private final AudioPlayerAlert.ClippingTextViewSwitcher textViewSwitcher;
 
@@ -444,6 +447,13 @@ public class SeekBarView extends FrameLayout {
             float step = (getMeasuredWidth() - selectorWidth) / ((float) delegate.getStepsCount() - 1f);
             thumbX = (int) (Math.round((thumbX) / step) * step);
         }
+        // GhostGram (PLAN.md 27): Material 3 slider rendering (inugram design)
+        // replaces the stock thin-line + circle thumb for the single-sided,
+        // non-chapter mode; two-sided and chapter-timestamp tracks keep stock.
+        if (!twoSided && (timestamps == null || timestamps.isEmpty())) {
+            drawM3(canvas, thumbX);
+            return;
+        }
         int y = (getMeasuredHeight() - thumbSize) / 2;
         innerPaint1.setColor(getThemedColor(Theme.key_player_progressBackground));
 
@@ -530,6 +540,80 @@ public class SeekBarView extends FrameLayout {
         drawTimestampLabel(canvas);
 
         if (needInvalidate) {
+            postInvalidateOnAnimation();
+        }
+    }
+
+    // GhostGram (PLAN.md 27): inugram M3SliderHelper.drawSeekBar equivalent.
+    // Geometry and colors mirror the Kotlin original; the wavy playback mode
+    // is not ported (no consumer enables it in this base).
+    private void drawM3(Canvas canvas, int thumbX) {
+        final int width = getMeasuredWidth();
+        final float span = width - selectorWidth;
+        if (span <= 0) {
+            return;
+        }
+        int stepsCount = 0;
+        if (separatorsCount > 1) {
+            stepsCount = separatorsCount;
+        } else if (delegate != null && delegate.needVisuallyDivideSteps() && delegate.getStepsCount() > 1) {
+            stepsCount = delegate.getStepsCount();
+        }
+
+        float cx = thumbX + selectorWidth / 2f;
+        boolean invalidate = false;
+        if (transitionProgress < 1f) {
+            final float fromCx = transitionThumbX + selectorWidth / 2f;
+            cx = AndroidUtilities.lerp(fromCx, cx, Easings.easeOutQuad.getInterpolation(transitionProgress));
+            final long now = SystemClock.elapsedRealtime();
+            long dt = now - lastUpdateTime;
+            lastUpdateTime = now;
+            if (dt > 18) {
+                dt = 16;
+            }
+            transitionProgress = Math.min(1f, transitionProgress + dt / 225f);
+            invalidate = true;
+        }
+
+        final float cy = getMeasuredHeight() / 2f;
+        final float left = selectorWidth / 2f;
+        final float right = width - selectorWidth / 2f;
+        final int activeColor = outerPaint1.getColor();
+        final int inactiveColor = getThemedColor(Theme.key_player_progressBackground);
+        final float hw = m3HandleWidth.set(AndroidUtilities.dpf2(pressed ? M3SliderDraw.HANDLE_WIDTH_PRESSED : M3SliderDraw.HANDLE_WIDTH)) / 2f;
+        if (m3HandleWidth.isInProgress()) {
+            invalidate = true;
+        }
+        final float gap = AndroidUtilities.dpf2(M3SliderDraw.GAP);
+        final float outerR = AndroidUtilities.dpf2(M3SliderDraw.OUTER_RADIUS);
+        final float innerR = AndroidUtilities.dpf2(M3SliderDraw.INNER_RADIUS);
+        final float dimUntil = minProgress >= 0 ? left + minProgress * (right - left) : -Float.MAX_VALUE;
+        final float activeRight = cx - hw - gap;
+        final float inactiveLeft = cx + hw + gap;
+
+        M3SliderDraw.drawSpan(canvas, left, activeRight, cy, outerR, innerR, activeColor, dimUntil, M3SliderDraw.TRACK_HEIGHT);
+        M3SliderDraw.drawSpan(canvas, inactiveLeft, right, cy, innerR, outerR, inactiveColor, -Float.MAX_VALUE, M3SliderDraw.TRACK_HEIGHT);
+
+        if (bufferedProgress > 0) {
+            final float bufferedRight = left + bufferedProgress * (right - left);
+            if (bufferedRight > inactiveLeft + 1f) {
+                innerPaint1.setColor(getThemedColor(Theme.key_player_progressCachedBackground));
+                final float endR = bufferedRight >= right - 1f ? outerR : innerR;
+                M3SliderDraw.drawRounded(canvas, inactiveLeft, Math.min(bufferedRight, right), cy, innerR, endR, innerPaint1, M3SliderDraw.TRACK_HEIGHT);
+            }
+        }
+
+        final int dots = M3SliderDraw.tickCount(stepsCount - 1, right - left);
+        if (dots > 0) {
+            M3SliderDraw.drawTicks(canvas, left, right, cy, cx, hw, dots, stepsCount - 1,
+                    getThemedColor(Theme.key_windowBackgroundWhite), activeColor, dimUntil);
+        } else {
+            M3SliderDraw.drawStopIndicator(canvas, right, cy, inactiveLeft, activeColor);
+        }
+
+        M3SliderDraw.drawHandle(canvas, cx, cy, hw * 2f, getMeasuredHeight(), activeColor);
+        drawTimestampLabel(canvas);
+        if (invalidate) {
             postInvalidateOnAnimation();
         }
     }

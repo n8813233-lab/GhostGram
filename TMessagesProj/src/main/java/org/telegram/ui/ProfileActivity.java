@@ -395,6 +395,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private FrameLayout avatarContainer;
     private FrameLayout avatarContainer2;
     private ProfileActionsView actionsView;
+    // GhostGram (PLAN.md 28): inugram md3 profile actions — the actions row is 94dp tall
+    // (52dp capsule + 13sp label below it), applied unconditionally as the default look.
+    private static final int PROFILE_ACTIONS_HEIGHT = 94;
     private MessagesController.SavedMusicList savedMusicList;
     private ProfileMusicView musicView;
     private AnimatedStatusView animatedStatusView;
@@ -3916,7 +3919,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
             });
 
-            actionsView = new ProfileActionsView(context, dp(74)) {
+            actionsView = new ProfileActionsView(context, dp(PROFILE_ACTIONS_HEIGHT)) {
                 @Override
                 public void setTranslationY(float translationY) {
                     super.setTranslationY(translationY);
@@ -5523,7 +5526,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             avatarsViewPager.setChatInfo(chatInfo);
         }
         avatarContainer2.addView(avatarsViewPager);
-        avatarContainer2.addView(avatarsBlurView, LayoutHelper.createFrame(-1, 74 + 64));
+        avatarContainer2.addView(avatarsBlurView, LayoutHelper.createFrame(-1, PROFILE_ACTIONS_HEIGHT + 64));
         avatarContainer2.addView(overlaysView);
         if (actionsView != null) {
             avatarsBlurView.setActionsView(actionsView);
@@ -6098,7 +6101,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int getActionsExtraHeight(boolean withMusic) {
         if (userId != 0 && imageUpdater != null && !myProfile)
             return 0;
-        return dp(74 + (withMusic && hasMusic ? 25 : 0));
+        return dp(PROFILE_ACTIONS_HEIGHT + (withMusic && hasMusic ? 25 : 0));
     }
 
     private int getHeaderExtraHeight() {
@@ -11247,11 +11250,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             float vh = avatarContainer.getHeight() * avatarContainer.getScaleY();
             actionsView.clipHeight = avatarContainer.getY() + vh;
             actionsView.setAlpha(avatarAnimationProgress);
-            actionsView.updatePosition(listView.getMeasuredWidth(), dp(74));
+            actionsView.updatePosition(listView.getMeasuredWidth(), dp(PROFILE_ACTIONS_HEIGHT));
         } else {
             actionsView.clipHeight = -1;
             float bottom = extraHeight + newTop - dp(hasMusic ? 25 : 0);
-            float height = Math.min(dp(74), bottom - newTop);
+            float height = Math.min(dp(PROFILE_ACTIONS_HEIGHT), bottom - newTop);
             actionsView.updatePosition(bottom - height, height);
         }
 
@@ -11277,12 +11280,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //            float vh = avatarContainer.getHeight() * avatarContainer.getScaleY();
 //            musicView.clipHeight = avatarContainer.getY() + vh;
             musicView.setAlpha(avatarAnimationProgress);
-            musicView.updatePosition(listView.getMeasuredWidth() + dp(74), getActionsExtraHeight() - dp(74));
+            musicView.updatePosition(listView.getMeasuredWidth() + dp(PROFILE_ACTIONS_HEIGHT), getActionsExtraHeight() - dp(PROFILE_ACTIONS_HEIGHT));
         } else {
 //            musicView.clipHeight = -1;
-            float bottom = extraHeight + newTop + dp(74);
+            float bottom = extraHeight + newTop + dp(PROFILE_ACTIONS_HEIGHT);
             float height = Math.min(getActionsExtraHeight(), bottom - newTop);
-            musicView.updatePosition(bottom - height, height - dp(74));
+            musicView.updatePosition(bottom - height, height - dp(PROFILE_ACTIONS_HEIGHT));
         }
     }
 

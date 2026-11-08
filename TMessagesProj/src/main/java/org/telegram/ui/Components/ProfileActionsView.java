@@ -129,7 +129,10 @@ public class ProfileActionsView extends View {
         top = dpf2(8);
         textPadding = dpf2(4);
 
-        this.targetHeight = (int) (targetHeight - ypadding - top);
+        // GhostGram (PLAN.md 28): inugram md3-profile-actions layout, applied unconditionally —
+        // ypadding is no longer reserved inside the row; the background is a 52dp capsule
+        // (2 * getRoundRadius()) and the label sits below it.
+        this.targetHeight = (int) (targetHeight - top);
 
         setBackgroundColor(0);
     }
@@ -191,12 +194,11 @@ public class ProfileActionsView extends View {
         int w = getMeasuredWidth();
         if (w <= 0) return;
 
-        float betweenPadding = xpadding / 2f;
-        float width = (w - betweenPadding * Math.max(0, activeCount - 1) - xpadding * 2f) / Math.max(1, activeCount);
+        float width = getItemWidth();
 
         this.radialGradient = new RadialGradient(
                 width / 2f,
-                targetHeight / 2f,
+                getRoundRadius(),
                 hasColorById ? width * 0.65f : 1f,
                 Theme.multAlpha(color, 0.8f),
                 color,
@@ -209,7 +211,7 @@ public class ProfileActionsView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         setMeasuredDimension(
                 MeasureSpec.getSize(widthMeasureSpec),
-                MeasureSpec.makeMeasureSpec((int) (targetHeight + top + ypadding), MeasureSpec.EXACTLY)
+                MeasureSpec.makeMeasureSpec((int) (targetHeight + top), MeasureSpec.EXACTLY)
         );
     }
 
@@ -222,7 +224,23 @@ public class ProfileActionsView extends View {
     private float getItemWidth() {
         int w = getMeasuredWidth();
         float betweenPadding = xpadding / 2f;
-        return (w - betweenPadding * (activeCount - 1) - xpadding * 2f) / activeCount;
+        int itemCount = Math.max(1, Math.max(4, activeCount));
+        float width = (w - betweenPadding * (itemCount - 1) - xpadding * 2f) / itemCount;
+        return Math.min(width, dpf2(112));
+    }
+
+    // GhostGram (PLAN.md 28): with the per-item width capped, the row is centered as a group.
+    private float getItemsLeft(float width) {
+        float betweenPadding = xpadding / 2f;
+        float itemsWidth = width * activeCount + betweenPadding * Math.max(0, activeCount - 1);
+        return (getMeasuredWidth() - itemsWidth) / 2f;
+    }
+
+    // GhostGram (PLAN.md 28): the visible background is only the top 52dp capsule of the
+    // (taller, label-carrying) action rect.
+    private void setActionBackgroundRect(RectF out, RectF actionRect) {
+        out.set(actionRect);
+        out.bottom = Math.min(out.bottom, out.top + getRoundRadius() * 2f);
     }
 
     @Override
@@ -235,7 +253,7 @@ public class ProfileActionsView extends View {
             canvas.clipRect(0f, 0f, getMeasuredWidth(), bottom);
         }
 
-        float height = Math.max(0f, currentHeight - ypadding - top);
+        float height = Math.max(0f, currentHeight - top);
 
         if (height <= 0f) {
             return;
@@ -243,7 +261,7 @@ public class ProfileActionsView extends View {
 
         final float betweenPadding = xpadding / 2f;
         final float width = getItemWidth();
-        float left = xpadding;
+        float left = getItemsLeft(width);
         float r = getRoundRadius();
 
         if (renderNode != null) {
@@ -268,10 +286,10 @@ public class ProfileActionsView extends View {
 
             action.updatePosition();
             if (renderNode != null) {
-                AndroidUtilities.rectTmp.set(action.rect);
+                setActionBackgroundRect(AndroidUtilities.rectTmp, action.rect);
                 AndroidUtilities.rectTmp.inset(
-                    action.rect.width() / 2.0f * (1.0f - action.getScale()),
-                    action.rect.height() / 2.0f * (1.0f - action.getScale())
+                    AndroidUtilities.rectTmp.width() / 2.0f * (1.0f - action.getScale()),
+                    AndroidUtilities.rectTmp.height() / 2.0f * (1.0f - action.getScale())
                 );
                 AndroidUtilities.rectTmp.inset(-1, -1);
                 clipPath.addRoundRect(AndroidUtilities.rectTmp, r, r, Path.Direction.CCW);
@@ -290,10 +308,10 @@ public class ProfileActionsView extends View {
             for (int i = 0; i < c; i++) {
                 Action action = actions.get(i);
                 if (!action.isDeleted) {
-                    AndroidUtilities.rectTmp.set(action.rect);
+                    setActionBackgroundRect(AndroidUtilities.rectTmp, action.rect);
                     AndroidUtilities.rectTmp.inset(
-                        action.rect.width() / 2.0f * (1.0f - action.getScale()),
-                        action.rect.height() / 2.0f * (1.0f - action.getScale())
+                        AndroidUtilities.rectTmp.width() / 2.0f * (1.0f - action.getScale()),
+                        AndroidUtilities.rectTmp.height() / 2.0f * (1.0f - action.getScale())
                     );
                     int wasAlpha = paint.getAlpha();
                     int newAlpha = (int) (action.getAlpha() * alphaFraction1 * wasAlpha);
@@ -383,7 +401,8 @@ public class ProfileActionsView extends View {
 
         action.text.setMaxWidth(action.rect.width() - dp(2));
         action.textScale = action.text.getLineCount() >= 3 ? 0.75f : action.text.getLineCount() >= 2 ? 0.85f : 1.0f;
-        final float drawableTop = Math.max(0, (targetHeight - action.text.getHeight() * action.textScale) / 3f + dpf2(1.33f));
+        // GhostGram (PLAN.md 28): the icon is centered inside the 52dp capsule.
+        final float drawableTop = top + getRoundRadius() - drawableR;
         action.setBounds(
             (int) (cx - drawableR),
             (int) (drawableTop),
@@ -407,9 +426,15 @@ public class ProfileActionsView extends View {
         }
 
         final int textColor = ColorUtils.blendARGB(Color.BLACK, Color.WHITE, useFilledWhiteIcon);
-        if (lastColorFilter == null || lastColorFilterColor != textColor) {
-            lastColorFilterColor = textColor;
-            lastColorFilter = new PorterDuffColorFilter(textColor, PorterDuff.Mode.SRC_IN);
+        // GhostGram (PLAN.md 28): on a light button color the M3 layout always uses the
+        // filled icon, tinted from the theme's blue icon color (inugram md3-profile-actions).
+        final boolean useMaterialFilledIcon = isButtonColorLight;
+        final int iconColor = useMaterialFilledIcon
+            ? ColorUtils.blendARGB(Theme.getColor(Theme.key_windowBackgroundWhiteBlueIcon), Color.WHITE, useFilledWhiteIcon)
+            : textColor;
+        if (lastColorFilter == null || lastColorFilterColor != iconColor) {
+            lastColorFilterColor = iconColor;
+            lastColorFilter = new PorterDuffColorFilter(iconColor, PorterDuff.Mode.SRC_IN);
         }
 
         canvas.save();
@@ -422,7 +447,8 @@ public class ProfileActionsView extends View {
 
         updateBounds(action);
 
-        final float textY = action.bounds.bottom + action.bounds.top - action.text.getHeight() * action.textScale / 2.0f - dp(4.66f);
+        // GhostGram (PLAN.md 28): the label sits below the capsule.
+        final float textY = top + getRoundRadius() * 2f + textPadding;
         canvas.save();
         canvas.scale(action.textScale, action.textScale, cx, textY + action.text.getHeight() * action.textScale / 2.0f);
         action.text.draw(canvas, cx - action.text.getWidth() / 2f, textY, textColor, alpha);
@@ -436,8 +462,8 @@ public class ProfileActionsView extends View {
             canvas.scale(action.iconScale, action.iconScale, action.bounds.centerX(), action.bounds.centerY());
         }
         if (!isAnimatingCallAction || action.key != KEY_CALL) {
-            final float outlineAlpha = (1f - useFilledWhiteIcon) * alpha;
-            final float filledAlpha = useFilledWhiteIcon * alpha;
+            final float outlineAlpha = (useMaterialFilledIcon ? 0f : 1f - useFilledWhiteIcon) * alpha;
+            final float filledAlpha = (useMaterialFilledIcon ? 1f : useFilledWhiteIcon) * alpha;
             if (action.drawableAnimated != null) {
                 if (action.key == KEY_NOTIFICATION) {
                     drawActionDrawable(canvas, action.drawableOutline, outlineAlpha);
@@ -493,7 +519,8 @@ public class ProfileActionsView extends View {
         }
 
         if (action.loadingDrawable != null) {
-            action.loadingDrawable.setBounds(action.rect);
+            setActionBackgroundRect(AndroidUtilities.rectTmp, action.rect);
+            action.loadingDrawable.setBounds(AndroidUtilities.rectTmp);
             action.loadingDrawable.setRadii(getRoundRadius());
             action.loadingDrawable.setAlpha((int) (0xFF * alpha));
             action.loadingDrawable.draw(canvas);
@@ -501,7 +528,8 @@ public class ProfileActionsView extends View {
     }
 
     public float getRoundRadius() {
-        return dp(16);
+        // GhostGram (PLAN.md 28): 26dp radius -> the 52dp-tall background reads as a capsule.
+        return dp(26);
     }
 
     private Action hit = null;
@@ -931,7 +959,7 @@ public class ProfileActionsView extends View {
             int c = actions.size();
             final float betweenPadding = xpadding / 2f;
             final float width = getItemWidth();
-            float left = xpadding;
+            float left = getItemsLeft(width);
 
             for (int i = 0; i < c; i++) {
                 Action action = actions.get(i);
@@ -945,7 +973,7 @@ public class ProfileActionsView extends View {
 
             updateBounds(callAction);
 
-            float callAnimateEndY = maxBottom - targetHeight - ypadding - top
+            float callAnimateEndY = maxBottom - targetHeight - top
                     + callAction.bounds.centerY()
                     - callView.getMeasuredHeight() / 2f
                     - callAnimateFromY;
@@ -1017,8 +1045,8 @@ public class ProfileActionsView extends View {
         }
 
         public void setText(CharSequence cs) {
-            this.text = new Text(cs, 11, AndroidUtilities.bold())
-                .multiline(3)
+            this.text = new Text(cs, 13, AndroidUtilities.bold())
+                .multiline(2)
                 .align(Layout.Alignment.ALIGN_CENTER);
         }
 

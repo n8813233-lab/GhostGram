@@ -90,7 +90,13 @@ dependencies {
     implementation "androidx.camera:camera-extensions:${camerax_version}"
     implementation "androidx.camera:camera-lifecycle:${camerax_version}"
     implementation "androidx.camera:camera-view:${camerax_version}"
-    implementation "androidx.camera:camera-video:${camerax_version}"
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): camera-video pulls the published
+    // media3-muxer/media3-container artifacts, which duplicate this base's
+    // locally built media3 modules (R8 duplicate-class). Exclude the
+    // artifacts; the local modules provide the same classes.
+    implementation("androidx.camera:camera-video:${camerax_version}") {
+        exclude group: 'androidx.media3'
+    }
 
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     implementation 'com.google.android.gms:play-services-mlkit-image-labeling:16.0.8'

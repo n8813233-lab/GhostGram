@@ -107,6 +107,15 @@ import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.ActionBarMenuSlider;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.AlertDialog;
+
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.provider.Settings;
+
+import java.util.concurrent.TimeUnit;
+
+import uz.unnarsx.cherrygram.core.configs.CherrygramCoreConfig;
+import uz.unnarsx.cherrygram.core.helpers.SleepHelper;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -1352,6 +1361,15 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         });
         playerLayout.addView(unsaveFromProfileButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 12, 12, 12, 12));
 
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram sleep timer button (donor 13.1.1 hunk).
+        sleepTimerButton = new ButtonWithCounterView(context, resourcesProvider).setRound();
+        SpannableStringBuilder sb1 = new SpannableStringBuilder();
+        sb1.append("+");
+        sb1.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.alarm_sleep_filled_solar)), 0, 1, 0);
+        sleepTimerButton.setText(sb1, false);
+        sleepTimerButton.setOnClickListener(v -> setSleepTimer());
+        playerLayout.addView(sleepTimerButton, LayoutHelper.createFrame(48, 44, Gravity.BOTTOM | Gravity.RIGHT, 0, 22, 16, 16));
+
         savedMusicList = MediaController.getInstance().currentSavedMusicList;
         isProfilePlaylist = savedMusicList != null;
         actionBar.menuOccupyBack = isProfilePlaylist;
@@ -1462,6 +1480,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         if (isMyList()) {
             saveToProfileButton.setVisibility(View.GONE);
             unsaveFromProfileButton.setVisibility(View.GONE);
+            sleepTimerButton.setVisibility(View.GONE);
 
             itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.Callback() {
                 @Override
@@ -3058,10 +3077,12 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         if (isMyList() || noforwards) {
             saveToProfileButton.setVisibility(View.GONE);
             unsaveFromProfileButton.setVisibility(View.GONE);
+            sleepTimerButton.setVisibility(View.GONE);
             return;
         }
         saveToProfileButton.setVisibility(View.VISIBLE);
         unsaveFromProfileButton.setVisibility(View.VISIBLE);
+        sleepTimerButton.setVisibility(View.VISIBLE);
         saveToProfileButton.animate()
             .alpha(visible ? 0.0f : 1.0f)
             .scaleX(visible ? 0.8f : 1.0f)
@@ -3768,4 +3789,149 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         keys.add(Theme.key_chat_outLoader);
         keys.add(Theme.key_chat_inLoader);
     }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram sleep timer (donor block, verbatim).
+    /** Cherrygram start */
+    public boolean hideBottomButtons;
+
+    private final ButtonWithCounterView sleepTimerButton;
+
+    private void setSleepTimer() {
+        ArrayList<CharSequence> presets = new ArrayList<>();
+        ArrayList<Integer> presetValues = new ArrayList<>();
+
+        presets.add(LocaleController.formatPluralString("Minutes", 1));
+        presetValues.add(1);
+
+        presets.add(LocaleController.formatPluralString("Minutes", 5));
+        presetValues.add(5);
+
+        presets.add(LocaleController.formatPluralString("Minutes", 10));
+        presetValues.add(10);
+
+        presets.add(LocaleController.formatPluralString("Minutes", 20));
+        presetValues.add(20);
+
+        presets.add(LocaleController.formatPluralString("Minutes", 40));
+        presetValues.add(40);
+
+        presets.add(LocaleController.formatPluralString("Hours", 1));
+        presetValues.add(60);
+
+        presets.add(getString(R.string.AutoDownloadCustom));
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourcesProvider());
+        builder.setTitle(getString(R.string.CG_Sleep));
+
+        builder.setItems(presets.toArray(new CharSequence[0]), (d, which) -> {
+            if (which < presetValues.size()) {
+                int minutes = presetValues.get(which);
+                setSleepIntent(minutes * 60);
+            } else {
+                AlertsCreator.createTimePickerDialog(
+                        getContext(),
+                        getString(R.string.CG_Sleep),
+                        0,
+                        0,
+                        12 * 60,
+                        pickedMinutes -> {
+                            int seconds = pickedMinutes * 60;
+                            setSleepIntent(seconds);
+                        }
+                );
+            }
+        });
+
+        builder.setNegativeButton(getString(R.string.Cancel), null);
+        builder.show();
+    }
+
+    private void setSleepIntent(int seconds) {
+        AlarmManager alarmManager = (AlarmManager) ApplicationLoader.applicationContext.getSystemService(Context.ALARM_SERVICE);
+        Intent myIntent = new Intent(ApplicationLoader.applicationContext, SleepHelper.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                ApplicationLoader.applicationContext, 1, myIntent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
+
+        alarmManager.cancel(pendingIntent);
+
+        if (seconds > 0) {
+            long triggerAtMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(seconds);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (!alarmManager.canScheduleExactAlarms()) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), getResourcesProvider());
+                    builder.setTopAnimation(R.raw.permission_request_apk, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
+                    builder.setMessage(getString(R.string.CG_Sleep_Permission));
+                    builder.setPositiveButton(getString(R.string.PermissionOpenSettings), (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                        intent.setData(Uri.parse("package:" + ApplicationLoader.applicationContext.getPackageName()));
+                        try {
+                            getContext().startActivity(intent);
+                        } catch (Exception x) {
+                            FileLog.e(x);
+                        }
+                    });
+                    builder.setNegativeButton(getString(R.string.Cancel), null);
+                    builder.show();
+                    return;
+                } else {
+                    alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            triggerAtMillis,
+                            pendingIntent
+                    );
+                }
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                );
+            }
+
+            CherrygramCoreConfig.INSTANCE.setSleepTimer(true);
+
+            String formattedTime;
+            if (seconds < 3600) {
+                int minutes = seconds / 60;
+                formattedTime = LocaleController.formatPluralString("Minutes", minutes);
+            } else {
+                int hours = seconds / 3600;
+                formattedTime = LocaleController.formatPluralString("Hours", hours);
+            }
+
+            BulletinFactory.of((FrameLayout) containerView, resourcesProvider)
+                    .createSimpleBulletin(R.raw.done, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.CG_Sleep_Timer, formattedTime)))
+                    .show();
+        } else {
+            if (CherrygramCoreConfig.INSTANCE.getSleepTimer()) {
+                BulletinFactory.of((FrameLayout) containerView, resourcesProvider)
+                        .createSimpleBulletin(R.raw.done, getString(R.string.CG_Sleep_Disabled))
+                        .show();
+            }
+            CherrygramCoreConfig.INSTANCE.setSleepTimer(false);
+        }
+    }
+
+    private void updateBottomButtonsVisibility() {
+        if (!hideBottomButtons || playerLayout == null) {
+            return;
+        }
+
+        playerLayout.removeView(saveToProfileButton);
+        playerLayout.removeView(unsaveFromProfileButton);
+        playerLayout.removeView(sleepTimerButton);
+
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) playerLayout.getLayoutParams();
+        layoutParams.height = dp(179);
+        playerLayout.setLayoutParams(layoutParams);
+
+        FrameLayout.LayoutParams shadowLayoutParams = (FrameLayout.LayoutParams) playerShadow.getLayoutParams();
+        shadowLayoutParams.bottomMargin = dp(179);
+        playerShadow.setLayoutParams(shadowLayoutParams);
+    }
+    /** Cherrygram finish */
+
 }

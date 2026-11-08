@@ -30,6 +30,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Looper;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -131,6 +132,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import me.vkryl.core.BitwiseUtils;
+import uz.unnarsx.cherrygram.chats.filters.MessagesFilterHelper;
 
 public class MessageObject {
     private static final int MESSAGE_ID_RESERVED_BITS_MASK = 0x70000000;
@@ -2116,6 +2118,11 @@ public class MessageObject {
         TLRPC.User fromUser = null;
         if (message.from_id instanceof TLRPC.TL_peerUser) {
             fromUser = getUser(users, sUsers, message.from_id.user_id);
+        }
+
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram message-filter hook (donor 13.1.1 hunk).
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            messageBlocked = MessagesFilterHelper.INSTANCE.shouldBlockMessage(this);
         }
 
         updateMessageText(users, chats, sUsers, sChats);
@@ -8248,7 +8255,8 @@ public class MessageObject {
             entities.add(entityItalic);
             return addEntitiesToText(text, entities, isOutOwner(), true, photoViewer, useManualParse);
         } else {
-            return addEntitiesToText(text, desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(this, getEntities()), isOutOwner(), true, photoViewer, useManualParse);
+            // GhostGram 2.0 phase 2: CG keyword-filter spoiler entities composed on top of inugram's blocked-user entities (both kept, one call chain).
+            return addEntitiesToText(text, MessagesFilterHelper.INSTANCE.addSpoilerEntities(this, desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(this, getEntities()), text), isOutOwner(), true, photoViewer, useManualParse);
         }
     }
 
@@ -9930,6 +9938,16 @@ public class MessageObject {
 
     public boolean isOut() {
         return messageOwner.out;
+    }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram message-filter state (donor 13.1.1 hunk).
+    public Boolean messageBlocked;
+
+    public boolean shouldBlockMessage() {
+        if (messageBlocked == null) {
+            messageBlocked = MessagesFilterHelper.INSTANCE.shouldBlockMessage(this);
+        }
+        return messageBlocked;
     }
 
     public Boolean isOutOwnerCached;

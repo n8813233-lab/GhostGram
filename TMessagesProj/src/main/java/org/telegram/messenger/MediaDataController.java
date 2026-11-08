@@ -9,6 +9,8 @@
 package org.telegram.messenger;
 
 import android.app.Activity;
+
+import uz.unnarsx.cherrygram.chats.filters.MessagesFilterHelper;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -6982,7 +6984,8 @@ public class MediaDataController extends BaseController {
     }
 
     public static void addTextStyleRuns(MessageObject msg, Spannable text) {
-        addTextStyleRuns(desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(msg), msg.messageText, text, -1);
+        // GhostGram 2.0 phase 2: CG keyword-filter spoiler entities composed over inugram's blocked-user entities.
+        addTextStyleRuns(MessagesFilterHelper.INSTANCE.addSpoilerEntities(msg, desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(msg), msg.messageText), msg.messageText, text, -1);
     }
 
     public static void addTextStyleRuns(TLRPC.DraftMessage msg, Spannable text, int allowedFlags) {
@@ -6990,7 +6993,8 @@ public class MediaDataController extends BaseController {
     }
 
     public static void addTextStyleRuns(MessageObject msg, Spannable text, int allowedFlags) {
-        addTextStyleRuns(desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(msg), msg.messageText, text, allowedFlags);
+        // GhostGram 2.0 phase 2: same composition as the 2-arg overload above.
+        addTextStyleRuns(MessagesFilterHelper.INSTANCE.addSpoilerEntities(msg, desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(msg), msg.messageText), msg.messageText, text, allowedFlags);
     }
 
     public static void addTextStyleRuns(ArrayList<TLRPC.MessageEntity> entities, CharSequence messageText, Spannable text) {

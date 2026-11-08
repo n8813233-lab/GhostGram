@@ -21,6 +21,8 @@
 
     <uses-permission android:name="android.permission.READ_CLIPBOARD"/>
     <uses-permission android:name="android.permission.CREDENTIAL_MANAGER_SET_ORIGIN" />
+    <!-- GhostGram 2.0 phase 2 (PLAN.md 29.4): exact alarms for the CG sleep timer (donor parity) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -727,6 +729,20 @@
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="org.telegram.messenger.chromecast.ChromecastOptionsProvider" />
+
+        <!-- GhostGram 2.0 phase 2 (PLAN.md 29.4): CG sleep timer alarm receiver, donor parity -->
+        <receiver
+            android:name="uz.unnarsx.cherrygram.core.helpers.SleepHelper"
+            android:enabled="true"
+            android:exported="true" />
+
+        <!-- GhostGram 2.0 phase 2: restart helper for CG settings backup import/reset -->
+        <activity
+            android:name="uz.unnarsx.cherrygram.core.helpers.AppRestartHelper"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:process=":ghostgram"
+            android:exported="false"
+            />
 
     </application>
 

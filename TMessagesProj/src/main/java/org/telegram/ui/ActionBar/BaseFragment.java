@@ -58,6 +58,9 @@ import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
+
+import uz.unnarsx.cherrygram.chats.helpers.ChatsPasswordHelper;
+import uz.unnarsx.cherrygram.helpers.ProfileActivityHelper;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.SecretChatHelper;
@@ -1113,6 +1116,18 @@ public abstract class BaseFragment {
     public UserConfig getUserConfig() {
         return getAccountInstance().getUserConfig();
     }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram helper accessors the ported
+    // uz code expects on every fragment (donor hunk).
+    /** Cherrygram start */
+    public ChatsPasswordHelper getChatsPasswordHelper() {
+        return ChatsPasswordHelper.getInstance(currentAccount);
+    }
+
+    public ProfileActivityHelper getProfileActivityHelper() {
+        return ProfileActivityHelper.getInstance(currentAccount);
+    }
+    /** Cherrygram finish */
 
     public void setFragmentPanTranslationOffset(int offset) {
         if (parentLayout != null) {

@@ -9,6 +9,9 @@
 package org.telegram.messenger;
 
 import android.annotation.SuppressLint;
+
+import uz.unnarsx.cherrygram.chats.filters.MessagesFilterHelper;
+import uz.unnarsx.cherrygram.chats.helpers.ChatsPasswordHelper;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -2640,6 +2643,12 @@ public class NotificationsController extends BaseController implements Notificat
             return stringBuilder.toString();
         }
         ArrayList<TLRPC.MessageEntity> entities = desu.inugram.helpers.chat.BlockedMessagesHelper.checkBlockedEntities(messageObject);
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): CG locked-chat / keyword-filter spoiler entities composed on top (donor logic).
+        if (ChatsPasswordHelper.getInstance(currentAccount).isChatLocked(messageObject) || ChatsPasswordHelper.getInstance(currentAccount).isEncryptedChat(messageObject)) {
+            entities = ChatsPasswordHelper.getInstance(currentAccount).checkLockedChatsEntities(messageObject);
+        } else {
+            entities = MessagesFilterHelper.INSTANCE.addSpoilerEntities(messageObject, entities, text);
+        }
         for (int i = 0; i < entities.size(); i++) {
             if (entities.get(i) instanceof TLRPC.TL_messageEntitySpoiler) {
                 TLRPC.TL_messageEntitySpoiler spoiler = (TLRPC.TL_messageEntitySpoiler) entities.get(i);

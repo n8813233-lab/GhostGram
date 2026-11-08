@@ -1,0 +1,172 @@
+/**
+ * This is the source code of Cherrygram for Android.
+ * It is licensed under GNU GPL v. 2 or later.
+ * You should have received a copy of the license in this archive (see LICENSE).
+ * Please, be respectful and credit the original author if you use this code.
+ *
+ * Copyright github.com/arsLan4k1390, 2022-2026.
+ *
+ * GhostGram foundation skeleton (2026-11-04, PLAN.md 9.4):
+ * - All preference keys/defaults are Cherrygram originals, except showGemini
+ *   (see inline note).
+ * - CUT: alo()/iV()/vA() donation-verification tail (remote Marketplace
+ *   donor list + a hidden unpublished constant) is NOT ported - same class
+ *   as PLAN 8.1 C13, found here as a twin of the AppearanceConfig tail.
+ */
+
+package uz.unnarsx.cherrygram.core.configs
+
+import android.app.Activity
+import android.content.SharedPreferences
+import android.os.Build
+import org.telegram.messenger.ApplicationLoader
+import org.telegram.messenger.LocaleController
+import uz.unnarsx.cherrygram.chats.gemini.GeminiButtonsLayout
+import uz.unnarsx.cherrygram.preferences.boolean
+import uz.unnarsx.cherrygram.preferences.int
+import uz.unnarsx.cherrygram.preferences.string
+
+object CherrygramMessagesConfig {
+
+    private val sharedPreferences: SharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE)
+
+    /** Gemini AI start */
+    var geminiApiKey by sharedPreferences.string("CP_GeminiApiKey", " ")
+    var geminiModelName by sharedPreferences.string("CP_GeminiModelName", " ")
+    var geminiSystemPrompt by sharedPreferences.string("CP_GeminiSystemPrompt", " ")
+    var geminiTemperatureValue by sharedPreferences.int("CP_GeminiTemperature", 5)
+
+    const val TRANSCRIPTION_PROVIDER_TELEGRAM = 0
+    const val TRANSCRIPTION_PROVIDER_GEMINI = 1
+    var voiceTranscriptionProvider by sharedPreferences.int("CP_VoiceTranscriptionProvider", TRANSCRIPTION_PROVIDER_TELEGRAM)
+    /** Gemini AI finish */
+
+    /** Appearance start */
+    /** Message menu start */
+    var blurMessageMenuBackground by sharedPreferences.boolean("CP_BlurMessageMenuBackground", false)
+    var msgMenuShowWholeAlbum by sharedPreferences.boolean("CP_MsgMenuShowWholeAlbum", false)
+    var msgMenuNativeBlur by sharedPreferences.boolean("CP_MsgMenuNativeBlur1", Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+    var rememberKeyboardState by sharedPreferences.boolean("CP_RememberKeyboardState", true)
+    var fixMsgMenuAnimation by sharedPreferences.boolean("CP_FixMsgMenuAnim", Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+    /** Message menu items start */
+    var showSaveForNotifications by sharedPreferences.boolean("CP_ShowSaveForNotifications", true)
+    // GhostGram C2 (PLAN.md 12.1): donor semantics restored verbatim - the
+    // default is GeminiButtonsLayout.geminiButtonsVisible(), i.e. whether
+    // the user has filled geminiApiKey/geminiModelName (both user-supplied,
+    // no preset key anywhere). Menu call sites additionally AND the stored
+    // toggle with geminiButtonsVisible(), exactly as the donor does.
+    var showGemini by sharedPreferences.boolean("CP_ShowGemini", GeminiButtonsLayout.geminiButtonsVisible())
+    var showReply by sharedPreferences.boolean("CP_ShowReply", true)
+    var showSaveToGallery by sharedPreferences.boolean("CP_ShowSaveToGallery", true)
+    var showCopyPhoto by sharedPreferences.boolean("CP_ShowCopyPhoto", true)
+    var showCopyPhotoAsSticker by sharedPreferences.boolean("CP_ShowCopyPhotoAsSticker", true)
+    var showSaveToDownloads by sharedPreferences.boolean("CP_ShowSaveToDownloads", true)
+    var showShare by sharedPreferences.boolean("CP_ShowShare", true)
+    var showClearFromCache by sharedPreferences.boolean("CP_ShowClearFromCache", true)
+    var showForward by sharedPreferences.boolean("CP_ShowForward", false)
+    var showForwardWoAuthorship by sharedPreferences.boolean("CP_ShowForward_WO_Authorship", false)
+    var showViewHistory by sharedPreferences.boolean("CP_ShowViewHistory", true)
+    var showSaveMessage by sharedPreferences.boolean("CP_ShowSaveMessage", false)
+    var showReport by sharedPreferences.boolean("CP_ShowReport", true)
+    var openInExternalApp by sharedPreferences.boolean("CP_OpenInExternalApp", true)
+
+    var showJSON by sharedPreferences.boolean("CP_ShowJSON", false)
+    var jacksonJSON_Provider by sharedPreferences.boolean("CP_JacksonJSON_Provider", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+
+    var msgMenuItemsCompactView by sharedPreferences.boolean("CP_MsgMenuItemsCompactView", false)
+    /** Message menu items finish */
+    /** Message menu finish */
+
+    /** Messages size start */
+    var largerVoiceMessagesLayout by sharedPreferences.boolean("CP_LargerVoiceMessagesLayout", true)
+    var slider_mediaAmplifier by sharedPreferences.int("CP_Slider_MediaAmplifier", 100)
+    var slider_stickerAmplifier by sharedPreferences.int("CP_Slider_StickerAmplifier", 100)
+    var slider_gifsAmplifier by sharedPreferences.int("CP_Slider_GifsAmplifier", 100)
+    /** Messages size finish */
+
+    /** Direct share start */
+    var shareDrawStoryButton by sharedPreferences.boolean("CP_ShareDrawStoryButton", true)
+    var usersDrawShareButton by sharedPreferences.boolean("CP_UsersDrawShareButton", false)
+    var supergroupsDrawShareButton by sharedPreferences.boolean("CP_SupergroupsDrawShareButton", false)
+    var channelsDrawShareButton by sharedPreferences.boolean("CP_ChannelsDrawShareButton", true)
+    var botsDrawShareButton by sharedPreferences.boolean("CP_BotsDrawShareButton", true)
+    var stickersDrawShareButton by sharedPreferences.boolean("CP_StickersDrawShareButton", false)
+    /** Direct share finish */
+
+    var wideMessagesLayout by sharedPreferences.boolean("CP_WideMessagesLayout", false)
+    var hideStickerTime by sharedPreferences.boolean("CP_TimeOnStick", false)
+    var msgForwardDate by sharedPreferences.boolean("CP_ForwardMsgDate", true)
+    var showPencilIcon by sharedPreferences.boolean("AP_PencilIcon", true)
+    /** Appearance finish */
+
+    /** Actions start */
+    /** Messages filter start */
+    var enableMsgFilters by sharedPreferences.boolean("CP_EnableMsgFilter", false)
+    var msgFiltersElements by sharedPreferences.string("CP_MsgFiltersElements", "")
+    var msgFiltersDetectTranslit by sharedPreferences.boolean("CP_MsgFiltersDetectTranslit", false)
+    var msgFiltersMatchExactWord by sharedPreferences.boolean("CP_MsgFiltersMatchExactWord", false)
+
+    var excludeUsers by sharedPreferences.boolean("CP_MsgFiltersExcludeUsers", false)
+    var excludeBots by sharedPreferences.boolean("CP_MsgFiltersExcludeBots", false)
+    var excludeGroups by sharedPreferences.boolean("CP_MsgFiltersExcludeGroups", false)
+    var excludeChannels by sharedPreferences.boolean("CP_MsgFiltersExcludeChannels", false)
+
+    var msgFiltersDetectEntities by sharedPreferences.boolean("CP_MsgFiltersDetectEntities", false)
+    var msgFiltersHideFromBlocked by sharedPreferences.boolean("CP_MsgFiltersHideFromBlocked1", false)
+    var msgFiltersHideAllUnderSpoiler by sharedPreferences.boolean("CP_MsgFiltersHideAll", false)
+    var msgFiltersCollapseAutomatically by sharedPreferences.boolean("CP_MsgFiltersCollapseAutomatically", false)
+    var msgFilterTransparentMsg by sharedPreferences.boolean("CP_MsgFilterTransparentMsg", false)
+    /** Messages filter finish */
+
+    const val LEFT_BUTTON_FORWARD_WO_AUTHORSHIP = 0
+    const val LEFT_BUTTON_REPLY = 1
+    const val LEFT_BUTTON_SAVE_MESSAGE = 2
+    const val LEFT_BUTTON_DIRECT_SHARE = 3
+    const val LEFT_BUTTON_FORWARD_WO_CAPTION = 4
+    var leftBottomButton by sharedPreferences.int("CP_LeftBottomButtonAction", LEFT_BUTTON_FORWARD_WO_AUTHORSHIP)
+
+    const val DOUBLE_TAP_ACTION_NONE = 0
+    const val DOUBLE_TAP_ACTION_REACTION = 1
+    const val DOUBLE_TAP_ACTION_REPLY = 2
+    const val DOUBLE_TAP_ACTION_SAVE = 3
+    const val DOUBLE_TAP_ACTION_EDIT = 4
+    const val DOUBLE_TAP_ACTION_TRANSLATE = 5
+    const val DOUBLE_TAP_ACTION_TRANSLATE_GEMINI = 6
+    var doubleTapAction by sharedPreferences.int("CP_DoubleTapAction", DOUBLE_TAP_ACTION_REACTION)
+
+    const val MESSAGE_SLIDE_ACTION_REPLY = 0
+    const val MESSAGE_SLIDE_ACTION_SAVE = 1
+    const val MESSAGE_SLIDE_ACTION_TRANSLATE = 2
+    const val MESSAGE_SLIDE_ACTION_DIRECT_SHARE = 3
+    const val MESSAGE_SLIDE_ACTION_TRANSLATE_GEMINI = 4
+    var messageSlideAction by sharedPreferences.int("CP_MessageSlideAction", MESSAGE_SLIDE_ACTION_REPLY)
+
+    var deleteForAll by sharedPreferences.boolean("CP_DeleteForAll", false)
+    /** Actions finish */
+
+    /** Telegram Premium start */
+    var disableReactionsOverlay by sharedPreferences.boolean("CP_DisableReactionsOverlay", false)
+    var disableReactionAnim by sharedPreferences.boolean("CP_DisableReactionAnim", false)
+    var disablePremStickAnim by sharedPreferences.boolean("CP_DisablePremStickAnim", false)
+    var disablePremStickAutoPlay by sharedPreferences.boolean("CP_DisablePremStickAutoPlay", false)
+    /** Telegram Premium finish */
+
+    /** Misc start */
+    // GhostGram C1 (PLAN.md 10.6/11.0): useBrailleSpoiler's donor home is a
+    // config file that is NOT ported (it also carries remote-config /
+    // analytics / ads channels). The key is relocated here unchanged -
+    // same property name, same prefs key "CG_UseBrailleSpoiler", same
+    // default false - and is purely local now: nothing remote can flip it.
+    var useBrailleSpoiler by sharedPreferences.boolean("CG_UseBrailleSpoiler", false)
+    var gifSpoilers by sharedPreferences.boolean("CG_GifSpoiler", false)
+    var photoAsSticker by sharedPreferences.boolean("CG_PhotoAsSticker", false)
+    var motionPhotosEnabled by sharedPreferences.boolean("CG_MotionPhotosEnabled", false)
+
+    /** Translator start */
+    var translationKeyboardTarget by sharedPreferences.string("translationKeyboardTarget", "app")
+    var translationTarget by sharedPreferences.string("translationTarget", "app")
+    var translationTargetGemini by sharedPreferences.string("translationTargetGemini", LocaleController.getInstance().currentLocale.language)
+    /** Translator finish */
+    /** Misc finish */
+
+}

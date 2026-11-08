@@ -7,6 +7,9 @@ import org.telegram.messenger.LocaleController
 import org.telegram.messenger.R
 import org.telegram.ui.Components.UItem
 import org.telegram.ui.Components.UniversalAdapter
+import uz.unnarsx.cherrygram.core.configs.backup.BackupHelper
+import uz.unnarsx.cherrygram.helpers.CreateQRSheet
+import uz.unnarsx.cherrygram.preferences.CherrygramPreferencesNavigator
 
 class InuSettingsActivity : SettingsPageActivity() {
     override fun getTitle(): CharSequence = LocaleController.getString(R.string.InuSettings)
@@ -90,6 +93,80 @@ class InuSettingsActivity : SettingsPageActivity() {
         )
         items.add(UItem.asShadow(null))
 
+        // GhostGram 2.0 phase 2: re-stitched Cherrygram feature pages and tools.
+        items.add(UItem.asHeader(LocaleController.getString(R.string.InuCGFeatures)))
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_APPEARANCE,
+                R.drawable.msg_customize,
+                LocaleController.getString(R.string.AP_Header_Appearance)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_CHATS,
+                R.drawable.msg_discussion,
+                LocaleController.getString(R.string.Chats)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_MESSAGE_MENU,
+                R.drawable.msg_customize,
+                LocaleController.getString(R.string.CP_MessageMenu)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_MESSAGE_FILTERS,
+                R.drawable.msg_search,
+                LocaleController.getString(R.string.CP_Message_Filtering)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_GEMINI,
+                R.drawable.msg_recent,
+                LocaleController.getString(R.string.CP_GeminiAI_Header)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_PRIVACY,
+                R.drawable.msg_pin_code,
+                LocaleController.getString(R.string.SettingsPrivacySecurity)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_CREATE_QR,
+                R.drawable.msg_qrcode,
+                LocaleController.getString(R.string.CG_CreateQR)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_BACKUP_EXPORT,
+                R.drawable.msg_shareout,
+                LocaleController.getString(R.string.CG_ExportSettings)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_BACKUP_IMPORT,
+                R.drawable.msg_photo_settings,
+                LocaleController.getString(R.string.CG_ImportSettings)
+            )
+        )
+        items.add(
+            UItem.asButton(
+                BUTTON_CG_BACKUP_RESET,
+                R.drawable.msg_delete,
+                LocaleController.getString(R.string.CG_ResetSettings)
+            )
+        )
+        items.add(UItem.asShadow(null))
+
         items.add(
             UItem.asButton(
                 BUTTON_BACKUP,
@@ -123,6 +200,16 @@ class InuSettingsActivity : SettingsPageActivity() {
             BUTTON_PRIVACY -> presentFragment(PrivacySecurityActivity())
             BUTTON_ABOUT -> presentFragment(AboutActivity())
             BUTTON_BACKUP -> presentFragment(BackupSettingsActivity())
+            BUTTON_CG_APPEARANCE -> CherrygramPreferencesNavigator.createAppearance(this)
+            BUTTON_CG_CHATS -> CherrygramPreferencesNavigator.createChats(this)
+            BUTTON_CG_MESSAGE_MENU -> CherrygramPreferencesNavigator.createMessageMenu(this)
+            BUTTON_CG_MESSAGE_FILTERS -> CherrygramPreferencesNavigator.createMessageFilter(this)
+            BUTTON_CG_GEMINI -> CherrygramPreferencesNavigator.createGemini(this)
+            BUTTON_CG_PRIVACY -> CherrygramPreferencesNavigator.createPrivacy(this)
+            BUTTON_CG_CREATE_QR -> CreateQRSheet(context, this, resourceProvider).show()
+            BUTTON_CG_BACKUP_EXPORT -> BackupHelper.backupSettings(this)
+            BUTTON_CG_BACKUP_IMPORT -> BackupHelper.importSettings(this)
+            BUTTON_CG_BACKUP_RESET -> BackupHelper.resetSettings(this)
         }
     }
 
@@ -139,6 +226,16 @@ class InuSettingsActivity : SettingsPageActivity() {
         private val BUTTON_PRIVACY = InuUtils.generateId()
         private val BUTTON_ABOUT = InuUtils.generateId()
         private val BUTTON_BACKUP = InuUtils.generateId()
+        private val BUTTON_CG_APPEARANCE = InuUtils.generateId()
+        private val BUTTON_CG_CHATS = InuUtils.generateId()
+        private val BUTTON_CG_MESSAGE_MENU = InuUtils.generateId()
+        private val BUTTON_CG_MESSAGE_FILTERS = InuUtils.generateId()
+        private val BUTTON_CG_GEMINI = InuUtils.generateId()
+        private val BUTTON_CG_PRIVACY = InuUtils.generateId()
+        private val BUTTON_CG_CREATE_QR = InuUtils.generateId()
+        private val BUTTON_CG_BACKUP_EXPORT = InuUtils.generateId()
+        private val BUTTON_CG_BACKUP_IMPORT = InuUtils.generateId()
+        private val BUTTON_CG_BACKUP_RESET = InuUtils.generateId()
 
         @JvmField
         val PAGE = SearchRegistry.Page(

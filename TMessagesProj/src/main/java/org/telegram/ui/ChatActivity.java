@@ -175,6 +175,14 @@ import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.SendMessageChatArguments;
 import org.telegram.messenger.MessageObject;
+
+import uz.unnarsx.cherrygram.chats.CGMessageMenuInjector;
+import uz.unnarsx.cherrygram.chats.gemini.GeminiButtonsLayout;
+import uz.unnarsx.cherrygram.chats.helpers.ChatActivityHelper;
+import uz.unnarsx.cherrygram.chats.helpers.ChatsHelper;
+import uz.unnarsx.cherrygram.chats.ui.MessageMenuHelper;
+import uz.unnarsx.cherrygram.core.configs.CherrygramMessagesConfig;
+import uz.unnarsx.cherrygram.core.configs.backup.BackupHelper;
 import org.telegram.messenger.MessagePreviewParams;
 import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
@@ -13128,6 +13136,25 @@ public class ChatActivity extends BaseFragment implements
         } else if (chatInfo instanceof TLRPC.TL_channelFull) {
             URLSpanBotCommand.enabled = !chatInfo.bot_info.isEmpty() && currentChat != null && currentChat.megagroup;
         }
+    }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): accessors the ported Cherry injectors /
+    // helpers expect on ChatActivity (donor has the same three getters).
+    private MessageMenuHelper cgMessageMenuHelper;
+
+    public MessageMenuHelper getMessageMenuHelper() {
+        if (cgMessageMenuHelper == null) {
+            cgMessageMenuHelper = new MessageMenuHelper();
+        }
+        return cgMessageMenuHelper;
+    }
+
+    public ChatsHelper getChatsHelper() {
+        return ChatsHelper.getInstance(currentAccount);
+    }
+
+    public ChatActivityHelper getChatActivityHelper() {
+        return ChatActivityHelper.getInstance(currentAccount);
     }
 
     public MessageObject.GroupedMessages getValidGroupedMessage(MessageObject message) {
@@ -32487,6 +32514,16 @@ public class ChatActivity extends BaseFragment implements
             final boolean showPrivateMessageFwdOriginal = !suggestEdit && !isEphemeral && false && (currentUser == null || !UserObject.isReplyUser(currentUser) && !UserObject.isAnonymous(currentUser)) && !isInScheduleMode() && message.isForwarded() && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             final boolean showSponsorInfo = !suggestEdit && !isEphemeral && selectedObject != null && selectedObject.isSponsored() && (selectedObject.sponsoredInfo != null || selectedObject.sponsoredAdditionalInfo != null || selectedObject.sponsoredUrl != null && !selectedObject.sponsoredUrl.startsWith("https://" + getMessagesController().linkPrefix));
             final boolean isReactionsAvailableFinal = !suggestEdit && isReactionsAvailable;
+            // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram Gemini section in the message menu (donor hunk).
+            final boolean showGeminiCG = !suggestEdit && selectedObject != null && CherrygramMessagesConfig.INSTANCE.getShowGemini() && GeminiButtonsLayout.geminiButtonsVisible();
+
+            // GhostGram 2.0 phase 2: Cherry menu customization runs on the finished
+            // item lists - per-item switches remove items, then the JSON viewer
+            // entry is appended (donor calls both at the end of menu construction).
+            if (selectedObject != null) {
+                CGMessageMenuInjector.INSTANCE.removeItems(this, selectedObject, allowEdit, noforwardsOrPaidMedia, items, options, icons);
+                CGMessageMenuInjector.INSTANCE.injectJSON(this, false, items, options, icons);
+            }
 
             int flags = ActionBarPopupWindow.ActionBarPopupWindowLayout.FLAG_USE_SWIPEBACK;
             if (isReactionsViewAvailable || showMessageSeen || showSponsorInfo) {
@@ -32506,6 +32543,12 @@ public class ChatActivity extends BaseFragment implements
             MessageSeenView messageSeenView = null;
             Runnable inu_viewsBottomAdder = null;
             boolean inu_addedBottomRegion = false;
+
+            // GhostGram 2.0 phase 2 (PLAN.md 29.4): Gemini swipe-back section (donor
+            // calls CGMessageMenuInjector.showGeminiItems at the equivalent point).
+            if (showGeminiCG) {
+                CGMessageMenuInjector.INSTANCE.showGeminiItems(this, popupLayout, selectedObject);
+            }
 
             updateScrimSourceBitmap();
 
@@ -34696,6 +34739,14 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
         boolean preserveDim = false;
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherry option dispatch runs first (donor parity).
+        getChatActivityHelper().checkProcessSelectedOption(
+                option,
+                this,
+                selectedObject, selectedObjectGroup,
+                threadMessageId,
+                currentChat
+        );
         switch (option) {
             case OPTION_RETRY: {
                 final MessageObject object = selectedObject;
@@ -47545,6 +47596,26 @@ public class ChatActivity extends BaseFragment implements
             options.add(OPTION_WELCOME_REVERT);
             icons.add(R.drawable.outline_revert_24);
         }
+
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram message-menu injections,
+        // consolidated at the tail of fillMessageMenu (donor calls them at scattered
+        // points of its own menu construction). Each injector checks its own
+        // CherrygramMessagesConfig switch before adding anything.
+        CGMessageMenuInjector.INSTANCE.injectOpenInExternal(noforwardsOrPaidMedia, message, items, options, icons);
+        CGMessageMenuInjector.INSTANCE.injectCopyPhoto(items, options, icons);
+        CGMessageMenuInjector.INSTANCE.injectClearFromCache(items, options, icons);
+        CGMessageMenuInjector.INSTANCE.injectDownloadSticker(selectedObject, items, options, icons);
+        if (type == BackupHelper.FILE_TYPE_CG_BACKUP) {
+            CGMessageMenuInjector.INSTANCE.injectImportSettings(items, options, icons);
+        }
+        if (!noforwardsOrPaidMedia) {
+            CGMessageMenuInjector.INSTANCE.injectForwardWoAuthorship(selectedObject, chatMode, items, options, icons);
+        }
+        CGMessageMenuInjector.INSTANCE.injectViewHistory(items, options, icons);
+        if (!noforwardsOrPaidMedia) {
+            CGMessageMenuInjector.INSTANCE.injectSaveMessage(message, chatMode, currentUser, items, options, icons);
+        }
+        CGMessageMenuInjector.INSTANCE.injectViewStatistics(this, message, items, options, icons);
     }
 
     private boolean showWelcomeMessageRevertOption(MessageObject messageObject) {

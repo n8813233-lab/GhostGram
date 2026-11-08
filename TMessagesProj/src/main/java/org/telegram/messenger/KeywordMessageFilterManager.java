@@ -6,6 +6,7 @@ import android.text.TextUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_stories;
 
 import java.util.ArrayList;
@@ -863,7 +864,6 @@ public class KeywordMessageFilterManager {
         appendPart(builder, owner.message);
         appendPart(builder, messageObject.caption);
         appendPart(builder, messageObject.messageText);
-        appendTextWithEntities(builder, owner.originalText);
         appendTextWithEntities(builder, owner.translatedText);
         appendTextWithEntities(builder, owner.translatedVoiceTranscription);
         appendTextWithEntities(builder, owner.summaryText);
@@ -1056,28 +1056,42 @@ public class KeywordMessageFilterManager {
         }
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): adapted to the 13.2.1 TL_keyboard model -
+    // button detail fields (url/query/fwd_text/copy_text) live on private subclasses
+    // there, so only the publicly exposed button text is indexed for filtering.
     private static void appendReplyMarkup(StringBuilder builder, TLRPC.ReplyMarkup replyMarkup) {
-        if (replyMarkup.rows == null) {
-            return;
-        }
-        for (int i = 0; i < replyMarkup.rows.size(); i++) {
-            TLRPC.TL_keyboardButtonRow row = replyMarkup.rows.get(i);
-            if (row == null || row.buttons == null) {
-                continue;
+        if (replyMarkup instanceof TLRPC.TL_replyKeyboardMarkup) {
+            ArrayList<TL_keyboard.KeyboardButtonRow> rows = ((TLRPC.TL_replyKeyboardMarkup) replyMarkup).rows;
+            if (rows == null) {
+                return;
             }
-            for (int j = 0; j < row.buttons.size(); j++) {
-                TLRPC.KeyboardButton button = row.buttons.get(j);
-                if (button == null) {
+            for (int i = 0; i < rows.size(); i++) {
+                TL_keyboard.KeyboardButtonRow row = rows.get(i);
+                if (row == null || row.buttons == null) {
                     continue;
                 }
-                appendPart(builder, button.text);
-                appendPart(builder, button.url);
-                appendPart(builder, button.query);
-                appendPart(builder, button.fwd_text);
-                if (button instanceof TLRPC.TL_keyboardButtonCopy_layer223) {
-                    appendPart(builder, ((TLRPC.TL_keyboardButtonCopy_layer223) button).copy_text);
-                } else if (button instanceof TLRPC.TL_keyboardButtonCopy) {
-                    appendPart(builder, ((TLRPC.TL_keyboardButtonCopy) button).copy_text);
+                for (int j = 0; j < row.buttons.size(); j++) {
+                    TL_keyboard.KeyboardButton button = row.buttons.get(j);
+                    if (button != null) {
+                        appendPart(builder, button.text);
+                    }
+                }
+            }
+        } else if (replyMarkup instanceof TLRPC.TL_replyInlineMarkup) {
+            ArrayList<TL_keyboard.KeyboardInlineButtonRow> rows = ((TLRPC.TL_replyInlineMarkup) replyMarkup).rows;
+            if (rows == null) {
+                return;
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                TL_keyboard.KeyboardInlineButtonRow row = rows.get(i);
+                if (row == null || row.buttons == null) {
+                    continue;
+                }
+                for (int j = 0; j < row.buttons.size(); j++) {
+                    TL_keyboard.KeyboardInlineButton button = row.buttons.get(j);
+                    if (button != null) {
+                        appendPart(builder, button.text);
+                    }
                 }
             }
         }

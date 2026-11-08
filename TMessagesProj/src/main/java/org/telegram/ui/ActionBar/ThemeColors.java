@@ -932,6 +932,7 @@ public class ThemeColors {
         defaultColors[key_telegram_color_dialogsLogo] = 0xFF168bdb;
         defaultColors[key_telegram_color] = TELEGRAM_COLOR;
         defaultColors[key_telegram_color_text] = TELEGRAM_COLOR_TEXT;
+        defaultColors[key_cgGradient2] = 0xffE54C7F;
 
         return defaultColors;
     }
@@ -1811,6 +1812,7 @@ public class ThemeColors {
         colorKeysMap.put(key_telegram_color, "telegram_color");
         colorKeysMap.put(key_telegram_color_text, "telegram_color_text");
         colorKeysMap.put(key_telegram_color_dialogsLogo, "telegram_color_dialogsLogo");
+        colorKeysMap.put(key_cgGradient2, "cgGradient2");
 
         return colorKeysMap;
     }

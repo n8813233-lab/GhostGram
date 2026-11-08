@@ -177,6 +177,7 @@ import org.telegram.messenger.SendMessageChatArguments;
 import org.telegram.messenger.MessageObject;
 
 import uz.unnarsx.cherrygram.chats.CGMessageMenuInjector;
+import uz.unnarsx.cherrygram.core.configs.CherrygramChatsConfig;
 import uz.unnarsx.cherrygram.chats.gemini.GeminiButtonsLayout;
 import uz.unnarsx.cherrygram.chats.helpers.ChatActivityHelper;
 import uz.unnarsx.cherrygram.chats.helpers.ChatsHelper;
@@ -479,7 +480,7 @@ public class ChatActivity extends BaseFragment implements
     private ActionBarMenu.LazyItem attachItem;
     private ActionBarMenuItem.Item savedChatsItem, savedChatsGap;;
     public ActionBarMenuItem headerItem;
-    protected ActionBarMenuItem searchItem;
+    public ActionBarMenuItem searchItem;
     protected ActionBarMenuItem topicCreateItem;
     private ActionBarMenuItem topicsPanelItem;
     private TopicsSidePanel topicsPanel;
@@ -654,7 +655,7 @@ public class ChatActivity extends BaseFragment implements
     private final int searchContainerHeight = ChatActivityEnterView.DEFAULT_HEIGHT;
     private FrameLayout searchContainer;
     private ImageView searchCalendarButton;
-    private ImageView searchUserButton;
+    public ImageView searchUserButton;
     private SearchFilterHelper inu_searchFilter;
     private AnimatedTextView searchCountText;
     private AnimatedTextView searchExpandList;
@@ -845,9 +846,9 @@ public class ChatActivity extends BaseFragment implements
     public MessagePreviewParams messagePreviewParams;
     public MessageSuggestionParams messageSuggestionParams;
     private CharSequence formwardingNameText;
-    private MessageObject forwardingMessage;
-    private MessageObject.GroupedMessages forwardingMessageGroup;
-    private MessageObject.GroupedMessages replyingQuoteGroup;
+    public MessageObject forwardingMessage;
+    public MessageObject.GroupedMessages forwardingMessageGroup;
+    public MessageObject.GroupedMessages replyingQuoteGroup;
     public MessageObject replyingTopMessage;
     public ReplyQuote replyingQuote;
     private boolean ignoreDraft;
@@ -1030,7 +1031,7 @@ public class ChatActivity extends BaseFragment implements
     private ChatObject.Call groupCall;
     private boolean lastCallCheckFromServer;
     private boolean createGroupCall;
-    protected TLRPC.ChatFull chatInfo;
+    public TLRPC.ChatFull chatInfo;
     protected TLRPC.UserFull userInfo;
 
     public ProfileChannelCell.ChannelMessageFetcher profileChannelMessageFetcher;
@@ -1189,7 +1190,7 @@ public class ChatActivity extends BaseFragment implements
     public static Pattern publicMsgUrlPattern;
     public static Pattern voiceChatUrlPattern;
     public static Pattern privateMsgUrlPattern;
-    private boolean waitingForSendingMessageLoad;
+    public boolean waitingForSendingMessageLoad;
     private ValueAnimator changeBoundAnimator;
     private Animator messageEditTextAnimator;
 
@@ -11912,7 +11913,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void searchUserMessages(TLRPC.User user, TLRPC.Chat chat) {
+    public void searchUserMessages(TLRPC.User user, TLRPC.Chat chat) {
         searchingUserMessages = user;
         searchingChatMessages = chat;
         if (searchItem == null || mentionContainer == null || searchingUserMessages == null && searchingChatMessages == null) {
@@ -13157,6 +13158,14 @@ public class ChatActivity extends BaseFragment implements
         return ChatActivityHelper.getInstance(currentAccount);
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor method the ported CG helpers call.
+    public boolean showDiscussInsteadOfMute() {
+        return CherrygramChatsConfig.INSTANCE.getDiscussInsteadOfMute()
+                && chatInfo != null && chatInfo.linked_chat_id != 0
+                && currentChat != null && ChatObject.isChannel(currentChat)
+                && ChatObject.isInChat(currentChat);
+    }
+
     public MessageObject.GroupedMessages getValidGroupedMessage(MessageObject message) {
         MessageObject.GroupedMessages groupedMessages = null;
         if (message.getGroupId() != 0) {
@@ -13623,7 +13632,7 @@ public class ChatActivity extends BaseFragment implements
         return animatorSearchResultAsListVisibility.getValue();
     }
 
-    private void showMessagesSearchListView(boolean show) {
+    public void showMessagesSearchListView(boolean show) {
         if (messagesSearchListContainer == null || animatorSearchResultAsListVisibility.getValue() == show) {
             return;
         }
@@ -15703,7 +15712,7 @@ public class ChatActivity extends BaseFragment implements
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, null, false, 0, true);
     }
 
-    private Runnable onHideFieldPanelRunnable;
+    public Runnable onHideFieldPanelRunnable;
     public void showFieldPanelForReplyQuote(MessageObject messageObjectToReply, ReplyQuote quote) {
         showFieldPanel(true, messageObjectToReply, null, null, null, true, 0, quote, false, 0, true);
     }
@@ -20149,7 +20158,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void addToSelectedMessages(MessageObject messageObject, boolean outside) {
+    public void addToSelectedMessages(MessageObject messageObject, boolean outside) {
         addToSelectedMessages(messageObject, outside, true);
     }
 
@@ -34120,7 +34129,7 @@ public class ChatActivity extends BaseFragment implements
 
     private ValueAnimator scrimViewAlphaAnimator;
 
-    private void closeMenu(boolean hideDim) {
+    public void closeMenu(boolean hideDim) {
         scrimPopupWindowHideDimOnDismiss = hideDim;
         if (scrimPopupWindow != null) {
             scrimPopupWindow.dismiss();
@@ -36473,7 +36482,7 @@ public class ChatActivity extends BaseFragment implements
         return messageObjects;
     }
 
-    private void alertUserOpenError(MessageObject message) {
+    public void alertUserOpenError(MessageObject message) {
         if (getParentActivity() == null) {
             return;
         }

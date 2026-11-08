@@ -60,6 +60,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 
 import uz.unnarsx.cherrygram.chats.helpers.ChatsPasswordHelper;
+import uz.unnarsx.cherrygram.chats.helpers.MessageHelper;
 import uz.unnarsx.cherrygram.helpers.ProfileActivityHelper;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
@@ -1120,6 +1121,10 @@ public abstract class BaseFragment {
     // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram helper accessors the ported
     // uz code expects on every fragment (donor hunk).
     /** Cherrygram start */
+    public MessageHelper getMessageHelper() {
+        return MessageHelper.getInstance(currentAccount);
+    }
+
     public ChatsPasswordHelper getChatsPasswordHelper() {
         return ChatsPasswordHelper.getInstance(currentAccount);
     }

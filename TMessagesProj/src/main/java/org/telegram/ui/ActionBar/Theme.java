@@ -3534,6 +3534,8 @@ public class Theme {
     public static final int key_inu_code_out_comment = colorsCount++;
     public static final int key_inu_code_out_function = colorsCount++;
     public static final int key_inu_dialogsBackground = colorsCount++;
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram badge gradient key (donor parity).
+    public static final int key_cgGradient2 = colorsCount++;
 
     public static final String key_drawable_botInline = "drawableBotInline";
     public static final String key_drawable_botLink = "drawableBotLink";

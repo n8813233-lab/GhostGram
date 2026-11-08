@@ -38,6 +38,7 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.DialogRadioCell;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.HeaderCell;
+import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Cells.NotificationsCheckCell;
 import org.telegram.ui.Cells.ProfileSearchCell;
 import org.telegram.ui.Cells.RadioButtonCell;
@@ -120,6 +121,10 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public static final int VIEW_TYPE_ANIMATED_HEADER = 42;
     public static final int VIEW_TYPE_TEXT_SETTINGS = 43;
     public static final int VIEW_TYPE_RADIO_2 = 44;
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram settings view types (donor parity).
+    public static final int VIEW_TYPE_TEXT_DETAIL_SETTINGS = 100;
+    public static final int VIEW_TYPE_SPACE_CG = 101;
+    public static final int VIEW_TYPE_CUSTOM_WITH_BACKGROUND = 102;
 
     protected final RecyclerListView listView;
     private final Context context;
@@ -388,6 +393,9 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_SWITCH:
             case VIEW_TYPE_EXPANDABLE_SWITCH:
             case VIEW_TYPE_TEXT_SETTINGS:
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS:
+            case VIEW_TYPE_SPACE_CG:
+            case VIEW_TYPE_CUSTOM_WITH_BACKGROUND:
                 return true;
         }
         return false;
@@ -418,6 +426,9 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 break;
             case VIEW_TYPE_TEXT_SETTINGS:
                 view = new TextSettingsCell(context, resourcesProvider);
+                break;
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS:
+                view = new TextDetailSettingsCell(context);
                 break;
             case VIEW_TYPE_BLACK_HEADER:
                 view = new HeaderCell(context, Theme.key_windowBackgroundWhiteBlackText, 17, 15, false, resourcesProvider);
@@ -459,6 +470,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 break;
             case VIEW_TYPE_CUSTOM:
             case VIEW_TYPE_CUSTOM_SHADOW:
+            case VIEW_TYPE_CUSTOM_WITH_BACKGROUND:
                 view = new FrameLayout(context) {
                     @Override
                     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -536,6 +548,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 view = new ChannelMonetizationLayout.ProceedOverviewCell(context, resourcesProvider);
                 break;
             case VIEW_TYPE_SPACE:
+            case VIEW_TYPE_SPACE_CG:
                 view = new SpaceView(context);
                 break;
             case VIEW_TYPE_BUSINESS_LINK:
@@ -680,6 +693,16 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 }
                 settingsCell.setIcon(item.iconResId);
                 break;
+            case VIEW_TYPE_TEXT_DETAIL_SETTINGS: {
+                TextDetailSettingsCell textDetailSettingsCell = (TextDetailSettingsCell) holder.itemView;
+                textDetailSettingsCell.setMultilineDetail(true);
+                if (item.iconResId != 0 && item.textValue != null) {
+                    textDetailSettingsCell.setTextAndValueAndIcon(item.text.toString(), item.textValue, item.iconResId, divider);
+                } else if (item.textValue != null) {
+                    textDetailSettingsCell.setTextAndValue(item.text.toString(), item.textValue, divider);
+                }
+                break;
+            }
             case VIEW_TYPE_TOPVIEW:
                 TopViewCell topCell = (TopViewCell) holder.itemView;
                 if (item.iconResId != 0) {
@@ -843,6 +866,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 break;
             case VIEW_TYPE_CUSTOM:
             case VIEW_TYPE_CUSTOM_SHADOW:
+            case VIEW_TYPE_CUSTOM_WITH_BACKGROUND:
             case VIEW_TYPE_FULLY_CUSTOM:
                 FrameLayout frameLayout = (FrameLayout) holder.itemView;
                 frameLayout.setClipChildren(!item.checked);
@@ -852,7 +876,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                     if (item.view != null) {
                         AndroidUtilities.removeFromParent(item.view);
                         FrameLayout.LayoutParams lp;
-                        if (viewType == VIEW_TYPE_CUSTOM || viewType == VIEW_TYPE_CUSTOM_SHADOW) {
+                        if (viewType == VIEW_TYPE_CUSTOM || viewType == VIEW_TYPE_CUSTOM_SHADOW || viewType == VIEW_TYPE_CUSTOM_WITH_BACKGROUND) {
                             lp = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, item.intValue);
                         } else {
                             lp = LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT);
@@ -963,6 +987,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 userCell1.setDivider(divider);
                 break;
             case VIEW_TYPE_SPACE:
+            case VIEW_TYPE_SPACE_CG:
                 if (item.transparent) {
                     ThemeBind.clear(holder.itemView); // custom (non-theme) background
                     holder.itemView.setBackgroundColor(0x00000000);

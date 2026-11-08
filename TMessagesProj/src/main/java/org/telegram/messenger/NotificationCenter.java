@@ -385,6 +385,9 @@ public class NotificationCenter {
     public static final int webBrowserSettingsUpdate = totalEvents++;
     public static final int communityPendingRequestsUpdate = totalEvents++;
     public static final int communitySwitchedCollapsed = totalEvents++;
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): custom ids for the ported CG features.
+    public static final int keywordFilterSettingsUpdated = totalEvents++;
+    public static final int cgTabsUpdated = totalEvents++;
 
     public static boolean alreadyLogged;
 

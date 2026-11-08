@@ -1281,6 +1281,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
     public static class SettingCell extends LinearLayout implements Theme.Colorable {
 
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Factory.of() flag bits (donor parity).
+        public static final int FLAG_CG_SETTINGS = 1;
+        public static final int FLAG_NO_MONET    = 1 << 1;
+
         private final Theme.ResourcesProvider resourcesProvider;
         private final Background iconBackground;
         private final FrameLayout iconLayout;
@@ -1378,6 +1382,27 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             valueView.setText(value);
         }
 
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor overload the ported CG pages
+        // call via Factory.of(..., boolean). The cgSettings/allowMonet flags are
+        // accepted for API parity; rendering stays the base's (inugram's
+        // M3SectionsHelper already styles SettingCell icons on this base).
+        public void set(
+            int iconColorTop, int iconColorBottom, int icon,
+            CharSequence title,
+            CharSequence subtitle,
+            CharSequence value,
+            boolean cgSettings,
+            boolean allowMonet
+        ) {
+            set(iconColorTop, iconColorBottom, icon, title, subtitle, value);
+        }
+
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor parity - CG settings rows show their value as the subtitle.
+        public void setValueCG(CharSequence value) {
+            subtitleView.setVisibility(!TextUtils.isEmpty(value) ? View.VISIBLE : View.GONE);
+            subtitleView.setText(value);
+        }
+
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             if (desu.inugram.helpers.theme.M3SectionsHelper.isEnabled()) {
@@ -1464,11 +1489,14 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                 int iconColorTop    = (int) item.longValue;
                 int iconColorBottom = (int) (item.longValue >>> 32);
+                final int flags = item.intValue;
                 ((SettingCell) view).set(
                     iconColorTop, iconColorBottom, item.iconResId,
                     item.text,
                     item.subtext,
-                    item.textValue
+                    item.textValue,
+                    (flags & FLAG_CG_SETTINGS) != 0,
+                    (flags & FLAG_NO_MONET) == 0
                 );
             }
 
@@ -1486,6 +1514,29 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 item.subtext = subtitle;
                 item.textValue = value;
                 item.longValue = ((long) iconColorBottom << 32) | (iconColorTop & 0xFFFFFFFFL);
+                return item;
+            }
+
+            // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor overloads - the boolean
+            // cgSettings/allowMonet flags are carried in item.intValue.
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, boolean cgSettings) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, null, cgSettings, true);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, boolean cgSettings, boolean allowMonet) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, null, cgSettings, allowMonet);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, CharSequence value, boolean allowMonet) {
+                return of(id, iconColorTop, iconColorBottom, icon, title, subtitle, value, false, allowMonet);
+            }
+            public static UItem of(int id, int iconColorTop, int iconColorBottom, int icon, CharSequence title, CharSequence subtitle, CharSequence value, boolean cgSettings, boolean allowMonet) {
+                final UItem item = UItem.ofFactory(Factory.class);
+                item.id = id;
+                item.iconResId = icon;
+                item.text = title;
+                item.subtext = subtitle;
+                item.textValue = value;
+                item.longValue = ((long) iconColorBottom << 32) | (iconColorTop & 0xFFFFFFFFL);
+                item.intValue = (cgSettings ? FLAG_CG_SETTINGS : 0) | (allowMonet ? 0 : FLAG_NO_MONET);
                 return item;
             }
 

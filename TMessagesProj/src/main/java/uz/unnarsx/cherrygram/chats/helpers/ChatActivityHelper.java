@@ -560,7 +560,7 @@ public class ChatActivityHelper extends BaseController {
                     TLRPC.Chat chat = getMessagesController().getChat(peer.channel_id);
                     chatActivity.searchUserMessages(null, chat);
                 }
-                if (chatActivity.searchFilterButton != null && chatActivity.searchFilterButton.getVisibility() == View.VISIBLE) chatActivity.searchFilterButton.setVisibility(View.INVISIBLE);
+                // GhostGram 2.0 phase 2 (PLAN.md 29.4): stock 13.2 has no searchFilterButton in ChatActivity - the hide call is dropped.
                 chatActivity.showMessagesSearchListView(true);
                 break;
             }

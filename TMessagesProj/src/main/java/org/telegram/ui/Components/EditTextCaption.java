@@ -1183,4 +1183,111 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
     public android.view.inputmethod.InputConnection onCreateInputConnection(android.view.inputmethod.EditorInfo outAttrs) {
         return desu.inugram.helpers.UrlCleanerHelper.wrapInputConnection(super.onCreateInputConnection(outAttrs), this);
     }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram selection helpers (donor block).
+    /** Cherrygram start */
+    public void makeSelectedCode() {
+        final int start;
+        final int end;
+        if (selectionStart >= 0 && selectionEnd >= 0) {
+            start = selectionStart;
+            end = selectionEnd;
+            selectionStart = selectionEnd = -1;
+        } else {
+            start = getSelectionStart();
+            end = getSelectionEnd();
+        }
+        var initial = "";
+        var styleSpans = getText().getSpans(start, end, CodeHighlighting.Span.class);
+        if (styleSpans != null) {
+            for (var oldSpan : styleSpans) {
+                if (!TextUtils.isEmpty(oldSpan.lng)) {
+                    initial = oldSpan.lng;
+                    break;
+                }
+            }
+        }
+        showInputDialog(
+                LocaleController.getString(R.string.CG_CreateCode),
+                LocaleController.getString(R.string.CG_CreateCodeLanguage),
+                initial,
+                false,
+                url -> {
+                    Editable editable = getText();
+                    CharacterStyle[] spans = editable.getSpans(start, end, CharacterStyle.class);
+                    if (spans != null && spans.length > 0) {
+                        for (CharacterStyle oldSpan : spans) {
+                            int spanStart = editable.getSpanStart(oldSpan);
+                            int spanEnd = editable.getSpanEnd(oldSpan);
+                            editable.removeSpan(oldSpan);
+                            if (spanStart < start) {
+                                editable.setSpan(oldSpan, spanStart, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            }
+                            if (spanEnd > end) {
+                                editable.setSpan(oldSpan, end, spanEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            }
+                        }
+                    }
+                    try {
+                        editable.setSpan(new CodeHighlighting.Span(true, 0, null, url, editable.subSequence(start, end).toString()), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    } catch (Exception ignore) {
+
+                    }
+                }
+        );
+    }
+
+    public void makeSelectedMention() {
+        final int start;
+        final int end;
+        if (selectionStart >= 0 && selectionEnd >= 0) {
+            start = selectionStart;
+            end = selectionEnd;
+            selectionStart = selectionEnd = -1;
+        } else {
+            start = getSelectionStart();
+            end = getSelectionEnd();
+        }
+        var initial = "";
+        var urlSpans = getText().getSpans(start, end, URLSpanUserMention.class);
+        if (urlSpans != null) {
+            for (var oldSpan : urlSpans) {
+                var url = oldSpan.getURL();
+                if (!TextUtils.isEmpty(url)) {
+                    initial = url;
+                    break;
+                }
+            }
+        }
+        showInputDialog(
+                LocaleController.getString(R.string.CG_CreateMention),
+                "ID",
+                initial,
+                false,
+                url -> {
+                    Editable editable = getText();
+                    CharacterStyle[] spans = editable.getSpans(start, end, CharacterStyle.class);
+                    if (spans != null && spans.length > 0) {
+                        for (CharacterStyle oldSpan : spans) {
+                            int spanStart = editable.getSpanStart(oldSpan);
+                            int spanEnd = editable.getSpanEnd(oldSpan);
+                            editable.removeSpan(oldSpan);
+                            if (spanStart < start) {
+                                editable.setSpan(oldSpan, spanStart, start, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            }
+                            if (spanEnd > end) {
+                                editable.setSpan(oldSpan, end, spanEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            }
+                        }
+                    }
+                    try {
+                        editable.setSpan(new URLSpanUserMention(url, 3), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    } catch (Exception ignore) {
+
+                    }
+                }
+        );
+    }
+    /** Cherrygram finish */
+
 }

@@ -134,7 +134,11 @@ public class BackDrawable extends Drawable {
             canvas.rotate(135 + currentRotation * (reverseAngle ? -180 : 180));
             rotation = 1.0f;
         }
-        canvas.drawLine(AndroidUtilities.dp(AndroidUtilities.lerp(-6.75f, -8f, rotation)), 0, AndroidUtilities.dp(8) - (paint.getStrokeWidth() / 2f) * (1f - rotation), 0, paint);
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): Cherrygram stick factor (donor draw parity).
+        float cgStartX = AndroidUtilities.dp(AndroidUtilities.lerp(-6.75f, -8f, rotation));
+        float cgDefaultEndX = AndroidUtilities.dp(8) - (paint.getStrokeWidth() / 2f) * (1f - rotation);
+        float cgStickFactor = showStick ? 1.0f : rotation;
+        canvas.drawLine(cgStartX, 0, AndroidUtilities.lerp(cgStartX, cgDefaultEndX, cgStickFactor), 0, paint);
         float startYDiff = AndroidUtilities.dp(-0.25f);
         float endYDiff = AndroidUtilities.dp(AndroidUtilities.lerp(7f, 8f, rotation)) - (paint.getStrokeWidth() / 4f) * (1f - rotation);
         float startXDiff = AndroidUtilities.dp(AndroidUtilities.lerp(-7f - 0.25f, 0f, rotation));
@@ -168,4 +172,20 @@ public class BackDrawable extends Drawable {
     public int getIntrinsicHeight() {
         return AndroidUtilities.dp(24);
     }
+
+    /** Cherrygram start (GhostGram 2.0 phase 2, PLAN.md 29.4) */
+    private boolean showStick = true;
+
+    public void setShowStick(boolean show) {
+        if (showStick != show) {
+            showStick = show;
+            invalidateSelf();
+        }
+    }
+
+    public boolean isShowStick() {
+        return showStick;
+    }
+    /** Cherrygram finish */
+
 }

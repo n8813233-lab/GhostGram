@@ -176,6 +176,9 @@ public final class BulletinFactory {
 
         MEDIA("MediaSavedHint", Icon.SAVED_TO_GALLERY),
 
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor parity for the CG sticker-download bulletin.
+        STICKER("CG_StickerSavedHint", R.string.CG_StickerSavedHint, Icon.SAVED_TO_GALLERY),
+
         PHOTO_TO_DOWNLOADS("PhotoSavedToDownloadsHintLinked", R.string.PhotoSavedToDownloadsHintLinked, Icon.SAVED_TO_DOWNLOADS),
         VIDEO_TO_DOWNLOADS("VideoSavedToDownloadsHintLinked", R.string.VideoSavedToDownloadsHintLinked, Icon.SAVED_TO_DOWNLOADS),
 

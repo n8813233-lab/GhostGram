@@ -321,6 +321,17 @@ public class UniversalRecyclerView extends RecyclerListView {
             if (item != null && item.id == itemId) {
                 return i;
             }
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor parity for CG settings pages.
+    public int findPositionByItemSlug(String slug) {
+        for (int i = 0; i < adapter.getItemCount(); ++i) {
+            UItem item = adapter.getItem(i);
+            if (item != null && slug.equals(item.slug)) {
+                return i;
+            }
+        }
+        return -1;
+    }
         }
         return -1;
     }

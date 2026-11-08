@@ -112,6 +112,8 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.provider.Settings;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.concurrent.TimeUnit;
 
 import uz.unnarsx.cherrygram.core.configs.CherrygramCoreConfig;

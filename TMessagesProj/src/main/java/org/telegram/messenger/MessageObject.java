@@ -9950,6 +9950,22 @@ public class MessageObject {
         return messageBlocked;
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor method the ported CG helpers call
+    // (custom-emoji reactions of this message; null-guarded vs the donor original).
+    public ArrayList<ReactionsLayoutInBubble.VisibleReaction> getCustomReactions() {
+        ArrayList<ReactionsLayoutInBubble.VisibleReaction> customReactions = new ArrayList<>();
+        if (messageOwner.reactions == null || messageOwner.reactions.results == null) {
+            return customReactions;
+        }
+        for (int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            ReactionsLayoutInBubble.VisibleReaction visibleReactionPeer = ReactionsLayoutInBubble.VisibleReaction.fromTL(messageOwner.reactions.results.get(i).reaction);
+            if (visibleReactionPeer.documentId != 0) {
+                customReactions.add(ReactionsLayoutInBubble.VisibleReaction.fromTL(messageOwner.reactions.results.get(i).reaction));
+            }
+        }
+        return customReactions;
+    }
+
     public Boolean isOutOwnerCached;
     public boolean isOutOwner() {
         if (previewForward) {

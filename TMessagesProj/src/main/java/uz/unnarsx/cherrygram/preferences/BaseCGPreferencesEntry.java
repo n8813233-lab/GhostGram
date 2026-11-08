@@ -275,7 +275,8 @@ public class BaseCGPreferencesEntry extends UniversalFragment {
         actionBar.setAddToContainer(false);
         actionBar.setUseContainerForTitles();
         actionBar.setOccupyStatusBar(false);
-        actionBar.setTitle(getTitle(), null, true);
+        // GhostGram 2.0 phase 2 (PLAN.md 29.4): stock 13.2 ActionBar has no gilroy-font setTitle overload.
+        actionBar.setTitle(getTitle(), null);
         actionBar.setTitleColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText));
         actionBar.setItemsColor(getThemedColor(Theme.key_windowBackgroundWhiteBlackText), false);
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {

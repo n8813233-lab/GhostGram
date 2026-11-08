@@ -897,6 +897,14 @@ public class ItemOptions {
         return this;
     }
 
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): donor-era helper the ported CG helpers use.
+    public ItemOptions addTextIf(boolean condition, CharSequence text, int textSizeDp) {
+        if (!condition) {
+            return this;
+        }
+        return this.addText(text, textSizeDp, -1);
+    }
+
     public ItemOptions addGapIf(boolean condition) {
         if (!condition) return this;
         return addGap();

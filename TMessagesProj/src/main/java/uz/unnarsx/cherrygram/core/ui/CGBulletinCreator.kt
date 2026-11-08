@@ -20,8 +20,11 @@ import org.telegram.messenger.LocaleController.getString
 import org.telegram.messenger.PasskeysController
 import org.telegram.messenger.R
 import org.telegram.messenger.UserConfig
+import org.telegram.tgnet.ConnectionsManager
 import org.telegram.tgnet.TLObject
 import org.telegram.tgnet.TLRPC
+import org.telegram.tgnet.tl.TL_account
+import org.telegram.ui.PasskeysActivity
 import org.telegram.ui.ActionBar.AlertDialog
 import org.telegram.ui.ActionBar.BaseFragment
 import org.telegram.ui.Components.Bulletin
@@ -126,7 +129,17 @@ object CGBulletinCreator {
             getString(R.string.CG_PasskeyNoCredentialAvailable),
             getString(R.string.Settings)
         ) {
-            PasskeysController.openSettings(fragment.getParentActivity())
+            // GhostGram 2.0 phase 2 (PLAN.md 29.4): stock 13.2 has no
+            // PasskeysController.openSettings - fetch the passkey list and open
+            // PasskeysActivity the way PrivacySettingsActivity does.
+            val account = UserConfig.selectedAccount
+            ConnectionsManager.getInstance(account).sendRequest(TL_account.getPasskeys()) { response, _ ->
+                if (response is TL_account.Passkeys) {
+                    AndroidUtilities.runOnUIThread {
+                        fragment.presentFragment(PasskeysActivity(response.passkeys))
+                    }
+                }
+            }
         }.show()
     }
 

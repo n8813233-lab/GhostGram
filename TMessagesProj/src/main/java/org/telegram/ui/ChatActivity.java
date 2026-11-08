@@ -36690,7 +36690,8 @@ public class ChatActivity extends BaseFragment implements
     }
 
     boolean preventReopenSearchWithText = false;
-    private void openSearchWithUser(TLRPC.User user) {
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): widened to public - the ported CG helpers call it (donor parity).
+    public void openSearchWithUser(TLRPC.User user) {
         boolean delay = false;
         if (savedMessagesHint != null && savedMessagesHint.shown()) {
             savedMessagesHint.hide();
@@ -40404,7 +40405,8 @@ public class ChatActivity extends BaseFragment implements
         return msg;
     }
 
-    private class ChatMessageCellDelegate implements ChatMessageCell.ChatMessageCellDelegate {
+    // GhostGram 2.0 phase 2: widened to public - the ported CG helpers drive it (donor parity).
+    public class ChatMessageCellDelegate implements ChatMessageCell.ChatMessageCellDelegate {
         @Override
         public boolean isReplyOrSelf() {
             return UserObject.isReplyUser(currentUser) || UserObject.isUserSelf(currentUser);
@@ -41287,7 +41289,7 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
-        private void appendMention(TLRPC.User user) {
+        public void appendMention(TLRPC.User user) {
             if (chatActivityEnterView != null) {
                 SpannableStringBuilder sb;
                 final CharSequence text = chatActivityEnterView.getFieldText();
@@ -41390,7 +41392,7 @@ public class ChatActivity extends BaseFragment implements
             return false;
         }
 
-        private void openProfile(TLRPC.User user) {
+        public void openProfile(TLRPC.User user) {
             openProfile(user, false);
         }
 
@@ -41423,7 +41425,7 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
-        private void openDialog(ChatMessageCell cell, TLRPC.User user) {
+        public void openDialog(ChatMessageCell cell, TLRPC.User user) {
             if (user != null) {
                 Bundle args = new Bundle();
                 args.putLong("user_id", user.id);

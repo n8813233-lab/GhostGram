@@ -129,10 +129,11 @@ object ChatsHelper2 {
                 chatActivity.openSearchWithUser(user)
             }
             .addIf(canEditTarget && ChatObject.canBlockUsers(chat), R.drawable.msg_remove, getString(R.string.KickFromGroup)) {
+                // GhostGram 2.0 phase 2 (PLAN.md 29.4): stock 13.2 dropped the
+                // (chatId, user, chatFull) overload - the 2-arg kick is its heir.
                 chatActivity.messagesController.deleteParticipantFromChat(
                     chat.id,
-                    chatActivity.messagesController.getUser(user.id),
-                    chatActivity.currentChatInfo
+                    chatActivity.messagesController.getUser(user.id)
                 )
             }
             .addIf(canEditTarget && ChatObject.hasAdminRights(chat), R.drawable.msg_permissions, getString(R.string.ChangePermissions)) {

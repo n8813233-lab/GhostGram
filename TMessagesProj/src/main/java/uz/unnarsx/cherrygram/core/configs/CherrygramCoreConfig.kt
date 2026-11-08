@@ -60,7 +60,17 @@ object CherrygramCoreConfig {
     var ignoreMentions by sharedPreferences.boolean("CG_IgnoreMentions", false)
     var ignoreMentionsMarkAsRead by sharedPreferences.boolean("CG_IgnoreMentionsMarkAsRead", false)
     var oldNotificationIcon by sharedPreferences.boolean("AP_Old_Notification_Icon", false)
-    var residentNotification by sharedPreferences.boolean("CG_ResidentNotification", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM && !ApplicationLoader.checkPlayServices())
+    var residentNotification by sharedPreferences.boolean("CG_ResidentNotification", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM && !hasPlayServices())
+
+    // GhostGram 2.0 phase 2 (PLAN.md 29.4): ApplicationLoader.checkPlayServices()
+    // is private in stock 13.2 - local equivalent for the default above.
+    private fun hasPlayServices(): Boolean = try {
+        com.google.android.gms.common.GoogleApiAvailability.getInstance()
+            .isGooglePlayServicesAvailable(ApplicationLoader.applicationContext) ==
+            com.google.android.gms.common.ConnectionResult.SUCCESS
+    } catch (e: Exception) {
+        false
+    }
     /** Notifications finish */
 
     /** Stories start */

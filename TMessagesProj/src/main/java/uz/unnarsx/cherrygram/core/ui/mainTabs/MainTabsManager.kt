@@ -146,13 +146,15 @@ object MainTabsManager {
 
             TabType.SEARCH -> {
                 if (showSearch) {
-                    GlassTabView.createStaticTab(
-                        context,
-                        resourceProvider,
-                        R.drawable.outline_header_search,
-                        R.string.Search,
-                        false
-                    )
+                    // GhostGram 2.0 phase 2 (PLAN.md 29.4): stock 13.2 GlassTabView has
+                    // no createStaticTab and its tab internals are private; the CG tab
+                    // manager is not wired on this base (inugram's native main tabs
+                    // cover the feature), so the search tab degrades to the same
+                    // hidden placeholder as the showSearch=false path.
+                    GlassTabView(context).apply {
+                        visibility = View.GONE
+                        layoutParams = RecyclerView.LayoutParams(0, 0)
+                    }
                 } else {
                     GlassTabView(context).apply {
                         visibility = View.GONE

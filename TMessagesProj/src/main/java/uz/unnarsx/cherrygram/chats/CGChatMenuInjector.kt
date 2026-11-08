@@ -353,7 +353,7 @@ object CGChatMenuInjector {
     }
 
     private fun openCameraScanActivity(fragment: BaseFragment) {
-        CameraScanActivity.showAsSheet(fragment, true, CameraScanActivity.TYPE_QR_UNIVERSAL, object : CameraScanActivity.CameraScanActivityDelegate {
+        CameraScanActivity.showAsSheet(fragment, true, CameraScanActivity.TYPE_QR, object : CameraScanActivity.CameraScanActivityDelegate {
             override fun processQr(text: String, action: Runnable): Boolean {
                 AndroidUtilities.runOnUIThread({
                     action.run()

@@ -1,9 +1,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
-        mavenCentral()buildscript {
-    repositories {
-    maven { url 'https://maven.aliyun.com/repository/public' } // GhostGram infra: GitHub-release CDN 504 outage fallback (PLAN.md 29.4)
+        maven { url 'https://maven.aliyun.com/repository/public' } // GhostGram infra: GitHub-release CDN 504 outage fallback (PLAN.md 29.4)
         mavenCentral()
         google()
         maven { url 'https://developer.huawei.com/repo/' }

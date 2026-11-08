@@ -3,8 +3,6 @@ apply plugin: 'org.jetbrains.kotlin.jvm'
 layout.buildDirectory = rootProject.layout.buildDirectory.dir('InuCore')
 
 repositories {
-    mavenCentral()
-}repositories {
     maven { url 'https://maven.aliyun.com/repository/public' } // GhostGram infra: GitHub-release CDN 504 outage fallback (PLAN.md 29.4)
     mavenCentral()
 }

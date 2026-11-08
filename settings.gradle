@@ -41,6 +41,9 @@ project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmat
 
 dependencyResolutionManagement {
     repositories {
+        google()dependencyResolutionManagement {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public' } // GhostGram infra: GitHub-release CDN 504 outage fallback (PLAN.md 29.4)
         google()
         mavenCentral()
     }

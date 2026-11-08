@@ -5,6 +5,10 @@ apply plugin: 'kotlin-android'
 repositories {
     mavenCentral()
     google()
+}repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' } // GhostGram infra: GitHub-release CDN 504 outage fallback (PLAN.md 29.4)
+    mavenCentral()
+    google()
 }
 
 configurations {

@@ -4,6 +4,7 @@
 // same artifact directly, so resolve plugins with Central first.
 pluginManagement {
     repositories {
+        maven("https://maven.aliyun.com/repository/public")
         mavenCentral()
         gradlePluginPortal()
         google()

@@ -66,16 +66,31 @@ public class MessageCustomParamsHelper {
         if (byteBuffer == null) {
             return;
         }
-        int version = byteBuffer.readInt32(true);
-        TLObject params;
-        switch (version) {
-            case 1:
-                params = new Params_v1(message);
-                break;
-            default:
-                throw new RuntimeException("can't read params version = " + version);
+        try {
+            int version = byteBuffer.readInt32(true);
+            TLObject params;
+            switch (version) {
+                case 1:
+                    params = new Params_v1(message);
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    // Blobs written by the previous Mango-based GhostGram line (its writer
+                    // used version 4). Same core layout, version-gated tail fields.
+                    // Databases carried over by upgrade installs still hold these rows.
+                    params = new Params_legacy(message, version);
+                    break;
+                default:
+                    // Stored params must never crash the process: skip unknown versions.
+                    FileLog.e("MessageCustomParamsHelper: skipping unknown params version = " + version);
+                    return;
+            }
+            params.readParams(byteBuffer, true);
+        } catch (Exception e) {
+            // A malformed/foreign params blob only loses that message's local params.
+            FileLog.e(e);
         }
-        params.readParams(byteBuffer, true);
     }
 
     public static NativeByteBuffer writeLocalParams(TLRPC.Message message) {
@@ -227,6 +242,92 @@ public class MessageCustomParamsHelper {
             }
             if (hasFlag(flags, FLAG_13)) {
                 message.translatedRichMessage = TL_iv.RichMessage.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+        }
+
+    }
+
+    /**
+     * Reader for params versions 2-4 as written by the previous Mango-based GhostGram
+     * line (writer version was 4). The core layout matches Params_v1 field-for-field,
+     * but the tail flags differ: FLAG_13 = originalText, FLAG_14 = localEditedText,
+     * FLAG_15 = localEditedDate (all version-gated, in this stream order).
+     * The current base's TLRPC.Message has no fields for those three values (they
+     * belonged to old-base-only features), so their payloads are consumed and dropped;
+     * every other field maps 1:1 and is preserved. Read-only: new writes stay v1.
+     */
+    private static class Params_legacy extends TLObject {
+
+        final TLRPC.Message message;
+        final int version;
+        int flags = 0;
+
+        private Params_legacy(TLRPC.Message message, int version) {
+            this.message = message;
+            this.version = version;
+        }
+
+        @Override
+        public void serializeToStream(OutputSerializedData stream) {
+            // Never written: writeLocalParams only produces Params_v1.
+        }
+
+        @Override
+        public void readParams(InputSerializedData stream, boolean exception) {
+            flags = stream.readInt32(true);
+            if ((flags & 1) != 0) {
+                message.voiceTranscription = stream.readString(exception);
+            }
+            message.voiceTranscriptionForce = (flags & 2) != 0;
+            message.summarizedOpen = (flags & 512) != 0;
+            message.voiceTranscriptionOpen = stream.readBool(exception);
+            message.voiceTranscriptionFinal = stream.readBool(exception);
+            message.voiceTranscriptionRated = stream.readBool(exception);
+            message.voiceTranscriptionId = stream.readInt64(exception);
+
+            message.premiumEffectWasPlayed = stream.readBool(exception);
+
+            if ((flags & 4) != 0) {
+                message.originalLanguage = stream.readString(exception);
+            }
+            if ((flags & 8) != 0) {
+                message.translatedToLanguage = stream.readString(exception);
+            }
+            if ((flags & 16) != 0) {
+                message.translatedText = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if ((flags & 32) != 0) {
+                message.translatedPoll = TranslateController.PollText.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if ((flags & 64) != 0) {
+                message.errorAllowedPriceStars = stream.readInt64(exception);
+            }
+            if ((flags & 128) != 0) {
+                message.errorNewPriceStars = stream.readInt64(exception);
+            }
+            if ((flags & 256) != 0) {
+                message.translatedVoiceTranscription = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_10)) {
+                message.summaryText = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_11)) {
+                message.translatedSummaryText = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (hasFlag(flags, FLAG_12)) {
+                message.translatedSummaryLanguage = stream.readString(exception);
+            }
+            if (version >= 2 && hasFlag(flags, FLAG_13)) {
+                // originalText: no counterpart field in the current base; consume & drop.
+                TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);
+            }
+            if (version >= 3 && hasFlag(flags, FLAG_14)) {
+                // localEditedText: no counterpart field in the current base; consume & drop.
+                stream.readString(exception);
+            }
+            if (version >= 4 && hasFlag(flags, FLAG_15)) {
+                // localEditedDate: no counterpart field in the current base; consume & drop.
+                stream.readInt32(exception);
             }
         }
 

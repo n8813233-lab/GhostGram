@@ -64,7 +64,7 @@ def commitId = System.getenv('COMMIT_ID')
 ext {
   inuPluginless = (findProperty('inu.pluginless') ?: inuBuildProperties.getProperty('inu.pluginless', 'false')).toBoolean()
   verName = "v2.0"
-  verCode = 70100
+  verCode = 70101
   stockVerCode = Integer.parseInt(APP_VERSION_CODE)
   buildDate = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_DATE)
   ccachePath = ['sh', '-c', 'command -v ccache'].execute().text.trim() ?: null

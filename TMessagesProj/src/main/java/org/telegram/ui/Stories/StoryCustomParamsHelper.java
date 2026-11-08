@@ -1,5 +1,6 @@
 package org.telegram.ui.Stories;
 
+import org.telegram.messenger.FileLog;
 import org.telegram.tgnet.AbstractSerializedData;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.NativeByteBuffer;
@@ -25,16 +26,22 @@ public class StoryCustomParamsHelper {
         if (byteBuffer == null) {
             return;
         }
-        int version = byteBuffer.readInt32(true);
-        TLObject params;
-        switch (version) {
-            case 1:
-                params = new Params_v1(storyItem);
-                break;
-            default:
-                throw new RuntimeException("(story) can't read params version = " + version);
+        try {
+            int version = byteBuffer.readInt32(true);
+            TLObject params;
+            switch (version) {
+                case 1:
+                    params = new Params_v1(storyItem);
+                    break;
+                default:
+                    // Stored params must never crash the process: skip unknown versions.
+                    FileLog.e("StoryCustomParamsHelper: skipping unknown params version = " + version);
+                    return;
+            }
+            params.readParams(byteBuffer, true);
+        } catch (Exception e) {
+            FileLog.e(e);
         }
-        params.readParams(byteBuffer, true);
     }
 
     public static NativeByteBuffer writeLocalParams(TL_stories.StoryItem storyItem) {
